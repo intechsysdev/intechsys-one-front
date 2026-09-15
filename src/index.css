@@ -1,0 +1,253 @@
+@import 'tailwindcss';
+
+@layer theme {
+  :root {
+    /* ── Superficies ───────────────────────────────────────────────────────
+       Escala de grises con una pizca de azul: separa los planos sin que el
+       ojo lea "gris sucio" en pantallas grandes.                            */
+    --surface-base: oklch(0.985 0.002 265);
+    --surface-sunken: oklch(0.965 0.004 265);
+    --surface-raised: oklch(1 0 0);
+    --surface-overlay: oklch(1 0 0);
+    --surface-inset: oklch(0.955 0.005 265);
+
+    --border-subtle: oklch(0.912 0.006 265);
+    --border-strong: oklch(0.845 0.009 265);
+
+    --text-primary: oklch(0.21 0.014 265);
+    --text-secondary: oklch(0.45 0.013 265);
+    --text-muted: oklch(0.58 0.012 265);
+
+    /* ── Acentos ───────────────────────────────────────────────────────── */
+    --accent: oklch(0.55 0.208 285);
+    --accent-hover: oklch(0.5 0.21 285);
+    --accent-soft: oklch(0.95 0.03 285);
+    --accent-border: oklch(0.86 0.07 285);
+    --accent-contrast: oklch(0.99 0 0);
+
+    --positive: oklch(0.58 0.14 155);
+    --positive-soft: oklch(0.95 0.04 155);
+    --caution: oklch(0.68 0.15 70);
+    --caution-soft: oklch(0.96 0.05 75);
+    --critical: oklch(0.56 0.2 25);
+    --critical-soft: oklch(0.96 0.03 25);
+    --info: oklch(0.6 0.13 230);
+    --info-soft: oklch(0.95 0.04 230);
+
+    /* ── Entornos ──────────────────────────────────────────────────────────
+       Color como señal de riesgo: producción siempre destaca.               */
+    --env-development: oklch(0.6 0.13 230);
+    --env-staging: oklch(0.68 0.15 70);
+    --env-production: oklch(0.56 0.2 25);
+
+    --ring: oklch(0.55 0.208 285 / 0.45);
+    --shadow-color: 265 25% 25%;
+
+    --radius: 0.75rem;
+    --sidebar-width: 16.5rem;
+    --sidebar-width-collapsed: 4.5rem;
+    --topbar-height: 3.75rem;
+
+    color-scheme: light;
+  }
+
+  :root[data-theme='dark'] {
+    --surface-base: oklch(0.165 0.014 265);
+    --surface-sunken: oklch(0.135 0.014 265);
+    --surface-raised: oklch(0.205 0.015 265);
+    --surface-overlay: oklch(0.235 0.016 265);
+    --surface-inset: oklch(0.185 0.014 265);
+
+    --border-subtle: oklch(0.285 0.016 265);
+    --border-strong: oklch(0.375 0.02 265);
+
+    --text-primary: oklch(0.97 0.004 265);
+    --text-secondary: oklch(0.76 0.012 265);
+    --text-muted: oklch(0.62 0.014 265);
+
+    --accent: oklch(0.68 0.17 285);
+    --accent-hover: oklch(0.74 0.16 285);
+    --accent-soft: oklch(0.3 0.08 285);
+    --accent-border: oklch(0.42 0.12 285);
+    --accent-contrast: oklch(0.15 0.02 285);
+
+    --positive: oklch(0.75 0.16 155);
+    --positive-soft: oklch(0.28 0.07 155);
+    --caution: oklch(0.8 0.15 75);
+    --caution-soft: oklch(0.3 0.07 75);
+    --critical: oklch(0.68 0.19 22);
+    --critical-soft: oklch(0.3 0.09 22);
+    --info: oklch(0.72 0.13 230);
+    --info-soft: oklch(0.28 0.07 230);
+
+    --env-development: oklch(0.72 0.13 230);
+    --env-staging: oklch(0.8 0.15 75);
+    --env-production: oklch(0.68 0.19 22);
+
+    --ring: oklch(0.68 0.17 285 / 0.5);
+    --shadow-color: 265 60% 3%;
+
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-base: var(--surface-base);
+  --color-sunken: var(--surface-sunken);
+  --color-raised: var(--surface-raised);
+  --color-overlay: var(--surface-overlay);
+  --color-inset: var(--surface-inset);
+
+  --color-line: var(--border-subtle);
+  --color-line-strong: var(--border-strong);
+
+  --color-ink: var(--text-primary);
+  --color-ink-soft: var(--text-secondary);
+  --color-ink-muted: var(--text-muted);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-border: var(--accent-border);
+  --color-accent-contrast: var(--accent-contrast);
+
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-caution: var(--caution);
+  --color-caution-soft: var(--caution-soft);
+  --color-critical: var(--critical);
+  --color-critical-soft: var(--critical-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --color-env-development: var(--env-development);
+  --color-env-staging: var(--env-staging);
+  --color-env-production: var(--env-production);
+
+  --radius-card: var(--radius);
+
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+
+  --shadow-soft: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 4px 16px -4px hsl(var(--shadow-color) / 0.08);
+  --shadow-lifted: 0 2px 4px hsl(var(--shadow-color) / 0.08), 0 12px 32px -8px hsl(var(--shadow-color) / 0.18);
+  --shadow-float: 0 4px 8px hsl(var(--shadow-color) / 0.1), 0 24px 64px -12px hsl(var(--shadow-color) / 0.3);
+}
+
+@layer base {
+  * {
+    border-color: var(--border-subtle);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--surface-sunken);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv05' 1, 'ss01' 1, 'tnum' 0;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--accent-soft);
+    color: var(--text-primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Barras de scroll discretas: en un panel denso, una barra gruesa roba atención. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--border-strong);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-muted);
+    background-clip: content-box;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* Los números de métricas y tablas se alinean en columna. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Fondo de la aplicación: dos halos muy tenues que dan profundidad sin ruido. */
+  .app-canvas {
+    background-image:
+      radial-gradient(ellipse 80rem 40rem at 12% -10%, var(--accent-soft), transparent 60%),
+      radial-gradient(ellipse 60rem 35rem at 95% 0%, var(--info-soft), transparent 55%);
+    background-repeat: no-repeat;
+  }
+
+  .surface-card {
+    background-color: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* Patrón de rejilla para cabeceras y estados vacíos. */
+  .grid-pattern {
+    background-image:
+      linear-gradient(var(--border-subtle) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+    background-size: 2.5rem 2.5rem;
+    mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000 20%, transparent 75%);
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--surface-inset) 25%,
+      var(--border-subtle) 50%,
+      var(--surface-inset) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
