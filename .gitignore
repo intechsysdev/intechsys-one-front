@@ -21,6 +21,9 @@ dist-ssr/
 .env
 .env.*
 !.env.example
+# Solo contiene el host público del API: debe viajar al repositorio para que
+# el build de Static Web Apps apunte al App Service correcto.
+!.env.production
 
 # Editores
 .vscode/*

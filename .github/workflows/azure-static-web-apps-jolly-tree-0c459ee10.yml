@@ -9,29 +9,54 @@ on:
     branches:
       - main
 
+env:
+  # Host del App Service que sirve el API. Lo consume Vite en tiempo de build
+  # (ver src/lib/api.ts) y debe coincidir con Cors:AllowedOrigins del API.
+  VITE_API_BASE_URL: 'https://intechsys-one-api-b5b5a6cbf9emevev.centralus-01.azurewebsites.net'
+
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     permissions:
-       id-token: write
-       contents: read
+      id-token: write
+      contents: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        # El build se hace aquí (no en Oryx) para controlar la versión de Node
+        # y las variables VITE_*; Static Web Apps solo sube el resultado.
+        run: npm run build
+
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
+
       - name: Get Id Token
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         id: idtoken
         with:
-           script: |
-               const coredemo = require('@actions/core')
-               return await coredemo.getIDToken()
-           result-encoding: string
+          script: |
+            const coredemo = require('@actions/core')
+            return await coredemo.getIDToken()
+          result-encoding: string
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -39,10 +64,13 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_TREE_0C459EE10 }}
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/" # App source code path
+          # Con skip_app_build el contenido a subir es app_location, y output_location
+          # se ignora: por eso se apunta directamente a dist/ (salida de Vite).
+          app_location: "dist"
           api_location: "" # Api source code path - optional
-          output_location: "build" # Built app content directory - optional
+          output_location: ""
+          skip_app_build: true # Ya se compiló en el paso "Build"
+          skip_api_build: true
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
 
@@ -55,4 +83,5 @@ jobs:
         id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_TREE_0C459EE10 }}
           action: "close"

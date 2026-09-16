@@ -3,6 +3,13 @@ import type { AuthResponse } from './types'
 const ACCESS_TOKEN_KEY = 'one.access'
 const REFRESH_TOKEN_KEY = 'one.refresh'
 
+/**
+ * Host del API. En desarrollo se deja vacío para que las rutas sigan siendo
+ * relativas y las resuelva el proxy de Vite; en los builds desplegados se
+ * inyecta VITE_API_BASE_URL con el App Service correspondiente.
+ */
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
+
 /** Error de la API ya traducido a algo que la interfaz puede mostrar. */
 export class ApiError extends Error {
   readonly status: number
@@ -62,7 +69,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
   refreshInFlight ??= (async () => {
     try {
-      const response = await fetch('/api/v1/auth/refresh', {
+      const response = await fetch(buildUrl('/api/v1/auth/refresh'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
@@ -94,14 +101,19 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
 }
 
 function buildUrl(path: string, query?: RequestOptions['query']) {
-  const url = new URL(path.startsWith('/api') ? path : `/api/v1${path}`, window.location.origin)
+  const url = new URL(
+    path.startsWith('/api') ? path : `/api/v1${path}`,
+    API_BASE_URL || window.location.origin,
+  )
 
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value === null || value === undefined || value === '') continue
     url.searchParams.set(key, String(value))
   }
 
-  return url.pathname + url.search
+  // Con API_BASE_URL la petición debe salir absoluta (dominio distinto al del portal);
+  // sin él se mantiene relativa para no romper el proxy de desarrollo.
+  return API_BASE_URL ? url.toString() : url.pathname + url.search
 }
 
 async function parseError(response: Response): Promise<ApiError> {
