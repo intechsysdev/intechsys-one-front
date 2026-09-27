@@ -537,6 +537,8 @@ function GeneralTab({
   const [documentationUrl, setDocumentationUrl] = useState('')
   const [supportEmail, setSupportEmail] = useState('')
   const [scopes, setScopes] = useState('')
+  const [launchUrl, setLaunchUrl] = useState('')
+  const [redirectUris, setRedirectUris] = useState('')
   const [isActive, setIsActive] = useState(true)
   const [isPublic, setIsPublic] = useState(true)
   const [dirty, setDirty] = useState(false)
@@ -555,6 +557,8 @@ function GeneralTab({
     setDocumentationUrl(app.documentationUrl ?? '')
     setSupportEmail(app.supportEmail ?? '')
     setScopes(app.availableScopes ?? '')
+    setLaunchUrl(app.launchUrl ?? '')
+    setRedirectUris(app.redirectUris ?? '')
     setIsActive(app.isActive)
     setIsPublic(app.isPublic)
     setDirty(false)
@@ -578,6 +582,8 @@ function GeneralTab({
         documentationUrl: documentationUrl.trim() || null,
         supportEmail: supportEmail.trim() || null,
         availableScopes: scopes.trim() || null,
+        launchUrl: launchUrl.trim() || null,
+        redirectUris: redirectUris.trim() || null,
         isActive,
         isPublic,
       })
@@ -671,6 +677,35 @@ function GeneralTab({
             className="font-mono text-[0.8125rem]"
             hint="Separados por espacios."
           />
+
+          <div className="flex flex-col gap-4 rounded-xl border border-line bg-inset/50 p-4">
+            <div>
+              <p className="text-[0.8438rem] font-medium text-ink">Inicio de sesión único</p>
+              <p className="mt-0.5 text-[0.75rem] leading-relaxed text-ink-muted">
+                Con URL de inicio, la app aparece en «Mis aplicaciones» de quienes tengan acceso y se
+                abre con la sesión de One. La app recibe el código en una de las direcciones de retorno.
+              </p>
+            </div>
+
+            <Input
+              label="URL de inicio"
+              value={launchUrl}
+              onChange={(event) => track(setLaunchUrl)(event.target.value)}
+              placeholder="https://mi-app.azurestaticapps.net/sso"
+              className="font-mono text-[0.8125rem]"
+              hint="La ruta de la app que arranca el inicio de sesión con One."
+            />
+
+            <Textarea
+              label="Direcciones de retorno"
+              rows={3}
+              value={redirectUris}
+              onChange={(event) => track(setRedirectUris)(event.target.value)}
+              placeholder={'https://mi-app.azurestaticapps.net/sso/callback\nhttp://localhost:5173/sso/callback'}
+              className="font-mono text-[0.8125rem]"
+              hint="Una por línea. Se comparan exactas: https, o http solo en localhost."
+            />
+          </div>
 
           <div className="flex flex-col gap-3.5 rounded-xl border border-line bg-inset/50 p-4">
             <Switch

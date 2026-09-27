@@ -8,6 +8,7 @@ import type {
   AppSummary,
   AuditLog,
   DashboardStats,
+  LaunchableApp,
   Paged,
   Role,
   Tenant,
@@ -39,6 +40,7 @@ export const keys = {
   apps: (params: unknown) => ['apps', params] as const,
   app: (id: string) => ['app', id] as const,
   appCategories: ['app-categories'] as const,
+  myApps: ['me', 'apps'] as const,
 
   users: (params: unknown) => ['users', params] as const,
   user: (id: string) => ['user', id] as const,
@@ -51,6 +53,15 @@ export interface ListParams {
   search?: string
   sortBy?: string
   descending?: boolean
+}
+
+// ── Mis aplicaciones ────────────────────────────────────────────────────────
+
+export function useMyApps() {
+  return useQuery({
+    queryKey: keys.myApps,
+    queryFn: () => api.get<LaunchableApp[]>('/api/v1/me/apps'),
+  })
 }
 
 // ── Panel ───────────────────────────────────────────────────────────────────

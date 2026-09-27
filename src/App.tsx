@@ -12,6 +12,8 @@ import { UsersPage } from './pages/UsersPage'
 import { AuditPage } from './pages/AuditPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { MyAppsPage } from './pages/MyAppsPage'
+import { AuthorizePage } from './pages/AuthorizePage'
 import { useAuth } from './providers/AuthProvider'
 
 export function App() {
@@ -20,8 +22,12 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
 
       <Route element={<RequireAuth />}>
+        {/* Fuera del marco del portal: es un paso de paso hacia otra app, no una pantalla. */}
+        <Route path="autorizar" element={<AuthorizePage />} />
+
         <Route element={<AppShell />}>
-          <Route index element={<DashboardPage />} />
+          <Route index element={<MyAppsPage />} />
+          <Route path="panel" element={<DashboardPage />} />
           <Route path="empresas" element={<TenantsPage />} />
           <Route path="empresas/:tenantId" element={<TenantDetailPage />} />
           <Route path="empresas/:tenantId/apps/:tenantAppId" element={<TenantAppPage />} />

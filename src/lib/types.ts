@@ -127,6 +127,10 @@ export interface AppSummary {
   isActive: boolean
   isPublic: boolean
   availableScopes?: string | null
+  /** Ruta de inicio de SSO. Sin ella la app no aparece en "Mis aplicaciones". */
+  launchUrl?: string | null
+  /** Direcciones de retorno del código de autorización, una por línea. */
+  redirectUris?: string | null
   settingCount: number
   tenantCount: number
   createdAt: string
@@ -322,4 +326,33 @@ export interface DashboardStats {
     credentialCount: number
   }[]
   recentActivity: AuditLog[]
+}
+
+// ── Inicio de sesión único ─────────────────────────────────────────────────
+
+/** Empresa desde la que se puede abrir una app. Sin rol cuando el acceso es de plataforma. */
+export interface LaunchTenant {
+  tenantId: string
+  name: string
+  slug: string
+  logoUrl?: string | null
+  role?: TenantRole | null
+}
+
+/** App que el usuario puede abrir desde el portal ya autenticado. */
+export interface LaunchableApp {
+  id: string
+  name: string
+  slug: string
+  description?: string | null
+  category?: string | null
+  iconUrl?: string | null
+  color?: string | null
+  launchUrl: string
+  tenants: LaunchTenant[]
+}
+
+export interface SsoAuthorizeResponse {
+  code: string
+  expiresAt: string
 }

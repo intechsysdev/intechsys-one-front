@@ -33,10 +33,13 @@ export function LoginPage() {
   const [error, setError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
 
-  if (status === 'authenticated') {
-    const from = (location.state as { from?: string } | null)?.from ?? '/'
-    return <Navigate to={from} replace />
-  }
+  const from = (location.state as { from?: string } | null)?.from ?? '/'
+
+  // Llegar al login desde /autorizar significa que una app pidió entrar con One: se dice, para
+  // que el usuario no crea que se equivocó de sitio.
+  const forApp = from.startsWith('/autorizar')
+
+  if (status === 'authenticated') return <Navigate to={from} replace />
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -75,7 +78,9 @@ export function LoginPage() {
             Iniciar sesión
           </h1>
           <p className="mt-1.5 text-[0.875rem] text-ink-muted">
-            Acceda con su cuenta corporativa para administrar empresas y accesos.
+            {forApp
+              ? 'Inicie sesión con su cuenta de One para continuar a la aplicación.'
+              : 'Acceda con su cuenta corporativa para administrar empresas y accesos.'}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4" noValidate>

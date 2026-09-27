@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import {
+  AppWindow,
   Blocks,
   Building2,
   CornerDownLeft,
@@ -42,7 +43,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
   const commands = useMemo<Command[]>(() => {
     const navigation: Command[] = [
-      { id: 'nav-dashboard', label: 'Ir al panel', group: 'Navegación', icon: LayoutDashboard, run: () => navigate('/') },
+      { id: 'nav-my-apps', label: 'Ir a mis aplicaciones', group: 'Navegación', icon: AppWindow, run: () => navigate('/') },
+      { id: 'nav-dashboard', label: 'Ir al panel', group: 'Navegación', icon: LayoutDashboard, run: () => navigate('/panel') },
       { id: 'nav-tenants', label: 'Ir a empresas', group: 'Navegación', icon: Building2, run: () => navigate('/empresas') },
       { id: 'nav-apps', label: 'Ir al catálogo de apps', group: 'Navegación', icon: Blocks, run: () => navigate('/apps') },
       { id: 'nav-profile', label: 'Ir a mi cuenta', group: 'Navegación', icon: Settings2, run: () => navigate('/perfil') },

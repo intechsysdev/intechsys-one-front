@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
+  AppWindow,
   Blocks,
   Building2,
   KeyRound,
@@ -23,7 +24,8 @@ const sections: { title: string; entries: NavEntry[] }[] = [
   {
     title: 'Operación',
     entries: [
-      { to: '/', label: 'Panel', icon: LayoutDashboard, end: true },
+      { to: '/', label: 'Mis aplicaciones', icon: AppWindow, end: true },
+      { to: '/panel', label: 'Panel', icon: LayoutDashboard },
       { to: '/empresas', label: 'Empresas', icon: Building2 },
       { to: '/apps', label: 'Catálogo de apps', icon: Blocks },
     ],
