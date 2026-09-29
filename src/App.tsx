@@ -27,20 +27,32 @@ export function App() {
 
         <Route element={<AppShell />}>
           <Route index element={<MyAppsPage />} />
-          <Route path="panel" element={<DashboardPage />} />
-          <Route path="empresas" element={<TenantsPage />} />
-          <Route path="empresas/:tenantId" element={<TenantDetailPage />} />
-          <Route path="empresas/:tenantId/apps/:tenantAppId" element={<TenantAppPage />} />
-          <Route path="apps" element={<AppsPage />} />
-          <Route path="apps/:appId" element={<AppDetailPage />} />
-          <Route path="usuarios" element={<UsersPage />} />
-          <Route path="auditoria" element={<AuditPage />} />
           <Route path="perfil" element={<ProfilePage />} />
+
+          {/* Gestión: solo para quien administra algo. Ocultar el menú no basta; alguien puede
+              escribir la dirección, y el API ya le negaría los datos, pero la pantalla quedaría
+              a medias con errores. */}
+          <Route element={<RequireManager />}>
+            <Route path="panel" element={<DashboardPage />} />
+            <Route path="empresas" element={<TenantsPage />} />
+            <Route path="empresas/:tenantId" element={<TenantDetailPage />} />
+            <Route path="empresas/:tenantId/apps/:tenantAppId" element={<TenantAppPage />} />
+            <Route path="apps" element={<AppsPage />} />
+            <Route path="apps/:appId" element={<AppDetailPage />} />
+            <Route path="usuarios" element={<UsersPage />} />
+            <Route path="auditoria" element={<AuditPage />} />
+          </Route>
+
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
     </Routes>
   )
+}
+
+function RequireManager() {
+  const { isManager } = useAuth()
+  return isManager ? <Outlet /> : <Navigate to="/" replace />
 }
 
 function RequireAuth() {

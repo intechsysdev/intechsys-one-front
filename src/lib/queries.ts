@@ -86,11 +86,12 @@ export function useAuditLogs(params: ListParams & { tenantId?: string; action?: 
 
 // ── Empresas ────────────────────────────────────────────────────────────────
 
-export function useTenants(params: ListParams & { status?: string }) {
+export function useTenants(params: ListParams & { status?: string }, enabled = true) {
   return useQuery({
     queryKey: keys.tenants(params),
     queryFn: () => api.get<Paged<TenantListItem>>('/tenants', { query: { ...params } }),
     placeholderData: (previous) => previous,
+    enabled,
   })
 }
 

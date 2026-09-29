@@ -35,20 +35,26 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const [highlighted, setHighlighted] = useState(0)
   const navigate = useNavigate()
   const { theme, toggle } = useTheme()
-  const { user } = useAuth()
+  const { user, isManager } = useAuth()
   const listRef = useRef<HTMLDivElement>(null)
 
   // Solo se consultan empresas mientras la paleta está abierta y hay texto.
-  const { data: tenants } = useTenants({ page: 1, pageSize: 6, search: query || undefined })
+  const { data: tenants } = useTenants({ page: 1, pageSize: 6, search: query || undefined }, isManager)
 
   const commands = useMemo<Command[]>(() => {
     const navigation: Command[] = [
       { id: 'nav-my-apps', label: 'Ir a mis aplicaciones', group: 'Navegación', icon: AppWindow, run: () => navigate('/') },
-      { id: 'nav-dashboard', label: 'Ir al panel', group: 'Navegación', icon: LayoutDashboard, run: () => navigate('/panel') },
-      { id: 'nav-tenants', label: 'Ir a empresas', group: 'Navegación', icon: Building2, run: () => navigate('/empresas') },
-      { id: 'nav-apps', label: 'Ir al catálogo de apps', group: 'Navegación', icon: Blocks, run: () => navigate('/apps') },
-      { id: 'nav-profile', label: 'Ir a mi cuenta', group: 'Navegación', icon: Settings2, run: () => navigate('/perfil') },
     ]
+
+    if (isManager) {
+      navigation.push(
+        { id: 'nav-dashboard', label: 'Ir al panel', group: 'Navegación', icon: LayoutDashboard, run: () => navigate('/panel') },
+        { id: 'nav-tenants', label: 'Ir a empresas', group: 'Navegación', icon: Building2, run: () => navigate('/empresas') },
+        { id: 'nav-apps', label: 'Ir al catálogo de apps', group: 'Navegación', icon: Blocks, run: () => navigate('/apps') },
+      )
+    }
+
+    navigation.push({ id: 'nav-profile', label: 'Ir a mi cuenta', group: 'Navegación', icon: Settings2, run: () => navigate('/perfil') })
 
     if (user?.isPlatformAdmin) {
       navigation.push(
@@ -78,7 +84,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       })) ?? []
 
     return [...navigation, ...tenantCommands]
-  }, [navigate, theme, toggle, tenants, user])
+  }, [navigate, theme, toggle, tenants, user, isManager])
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase()

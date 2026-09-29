@@ -20,6 +20,11 @@ interface AuthContextValue {
   /** Rol del usuario en la empresa indicada, o null si no pertenece a ella. */
   roleIn: (tenantId: string) => TenantRole | null
   canManageTenant: (tenantId: string) => boolean
+  /**
+   * Si administra algo en el portal: rol de plataforma, o Owner/Admin de alguna empresa. Un
+   * usuario que solo es miembro no gestiona nada aquí; el portal es su lanzador de apps.
+   */
+  isManager: boolean
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -113,6 +118,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const role = roleIn(tenantId)
         return role === 'Owner' || role === 'Admin'
       },
+      isManager:
+        (user?.isPlatformAdmin ?? false) ||
+        (user?.roles.includes('PlatformSupport') ?? false) ||
+        (user?.memberships.some((m) => m.role === 'Owner' || m.role === 'Admin') ?? false),
     }
   }, [user, status, login, logout, refreshUser])
 

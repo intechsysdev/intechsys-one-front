@@ -18,13 +18,15 @@ interface NavEntry {
   icon: typeof LayoutDashboard
   end?: boolean
   adminOnly?: boolean
+  /** Visible también para quien solo es miembro. El resto del menú es de gestión. */
+  everyone?: boolean
 }
 
 const sections: { title: string; entries: NavEntry[] }[] = [
   {
     title: 'Operación',
     entries: [
-      { to: '/', label: 'Mis aplicaciones', icon: AppWindow, end: true },
+      { to: '/', label: 'Mis aplicaciones', icon: AppWindow, end: true, everyone: true },
       { to: '/panel', label: 'Panel', icon: LayoutDashboard },
       { to: '/empresas', label: 'Empresas', icon: Building2 },
       { to: '/apps', label: 'Catálogo de apps', icon: Blocks },
@@ -35,13 +37,13 @@ const sections: { title: string; entries: NavEntry[] }[] = [
     entries: [
       { to: '/usuarios', label: 'Usuarios', icon: Users, adminOnly: true },
       { to: '/auditoria', label: 'Auditoría', icon: ScrollText, adminOnly: true },
-      { to: '/perfil', label: 'Mi cuenta', icon: Settings2 },
+      { to: '/perfil', label: 'Mi cuenta', icon: Settings2, everyone: true },
     ],
   },
 ]
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
-  const { user } = useAuth()
+  const { user, isManager } = useAuth()
   const isSupport = user?.roles.includes('PlatformSupport') ?? false
   const canSeeAdmin = (user?.isPlatformAdmin ?? false) || isSupport
 
@@ -51,14 +53,20 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="flex flex-1 flex-col gap-6">
         {sections.map((section) => {
-          const entries = section.entries.filter((entry) => !entry.adminOnly || canSeeAdmin)
+          const entries = section.entries.filter((entry) =>
+            isManager ? !entry.adminOnly || canSeeAdmin : entry.everyone,
+          )
           if (entries.length === 0) return null
 
           return (
             <div key={section.title} className="flex flex-col gap-1">
-              <p className="px-3 pb-1 text-[0.6875rem] font-semibold tracking-[0.08em] text-ink-muted uppercase">
-                {section.title}
-              </p>
+              {/* Con solo dos entradas los títulos sobran, y "Administración" sobre "Mi cuenta"
+                  confundiría a quien no administra nada. */}
+              {isManager && (
+                <p className="px-3 pb-1 text-[0.6875rem] font-semibold tracking-[0.08em] text-ink-muted uppercase">
+                  {section.title}
+                </p>
+              )}
 
               {entries.map((entry) => (
                 <NavLink
@@ -95,7 +103,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </div>
 
-      <IntegrationHint />
+      {/* Es una nota técnica para quien integra apps; a un usuario final no le dice nada. */}
+      {isManager && <IntegrationHint />}
     </nav>
   )
 }
