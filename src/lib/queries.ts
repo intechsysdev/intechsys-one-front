@@ -395,6 +395,19 @@ export function useUpdateApp(id: string) {
   })
 }
 
+export function useUpdateIntegrationGuide(id: string) {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: (body: { apiBaseUrl: string | null; integrationGuide: string | null }) =>
+      api.put<AppDetail>(`/apps/${id}/integration-guide`, body),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.app(id) })
+      void client.invalidateQueries({ queryKey: ['apps'] })
+    },
+  })
+}
+
 export function useDeleteApp() {
   const client = useQueryClient()
 

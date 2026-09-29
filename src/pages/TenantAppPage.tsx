@@ -19,8 +19,11 @@ import { Input, Select, Switch, Textarea } from '@/components/ui/Field'
 import { ConfirmDialog } from '@/components/ui/Modal'
 import { CopyButton, EnvironmentPicker, Tabs } from '@/components/ui/Controls'
 import { Avatar, Badge, Card, CardHeader, EmptyState, PageHeader, Skeleton } from '@/components/ui/Primitives'
-import { useRemoveTenantApp, useTenantApp, useUpdateTenantApp } from '@/lib/queries'
-import { ApiError } from '@/lib/api'
+import { useApp, useRemoveTenantApp, useTenantApp, useUpdateTenantApp } from '@/lib/queries'
+import { API_BASE_URL, ApiError } from '@/lib/api'
+import { IntegrationGuideView } from '@/components/domain/IntegrationGuideView'
+import { fillGuide } from '@/lib/guide'
+import type { TenantApp } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
 import { useAuth } from '@/providers/AuthProvider'
 import type { AppEnvironment, SubscriptionStatus } from '@/lib/types'
@@ -153,7 +156,7 @@ export function TenantAppPage() {
         />
       )}
 
-      {tab === 'integrar' && <IntegrationGuide appSlug={subscription.appSlug} />}
+      {tab === 'integrar' && <IntegrationGuide subscription={subscription} />}
 
       {tab === 'ajustes' && (
         <SubscriptionSettings
@@ -368,8 +371,13 @@ function SubscriptionSettings({
 
 // ── Guía de integración ─────────────────────────────────────────────────────
 
-function IntegrationGuide({ appSlug }: { appSlug: string }) {
-  const origin = window.location.origin
+function IntegrationGuide({ subscription }: { subscription: TenantApp }) {
+  const appSlug = subscription.appSlug
+  const { data: app } = useApp(subscription.appId)
+
+  // La dirección del API de One, no la del portal: en producción viven en dominios distintos y
+  // un curl contra el portal devolvería la página, no la configuración.
+  const origin = API_BASE_URL || window.location.origin
 
   const curl = `curl "${origin}/api/v1/integration/config" \\
   -H "X-Api-Key: $ONE_API_KEY" \\
@@ -396,6 +404,22 @@ var config = await client.GetFromJsonAsync<AppConfiguration>(
 
   return (
     <div className="flex flex-col gap-4">
+      {app?.integrationGuide && (
+        <Card className="flex flex-col gap-4">
+          <CardHeader
+            title={`API de ${subscription.appName}`}
+            description={`Cómo la consume un sistema externo en nombre de ${subscription.tenantName}. La credencial se emite en la pestaña Credenciales.`}
+          />
+          <IntegrationGuideView
+            source={fillGuide(app.integrationGuide, {
+              API_BASE_URL: app.app.apiBaseUrl,
+              TENANT_SLUG: subscription.tenantSlug,
+              TENANT_ID: subscription.tenantId,
+            })}
+          />
+        </Card>
+      )}
+
       <Card className="flex flex-col gap-4">
         <CardHeader
           title="Cómo lee la app su configuración"

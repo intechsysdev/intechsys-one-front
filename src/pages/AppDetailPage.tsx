@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   AlertTriangle,
+  BookOpen,
   Building2,
   GripVertical,
   Pencil,
@@ -31,7 +32,10 @@ import {
   useDeleteSettingDefinition,
   useSaveSettingDefinition,
   useUpdateApp,
+  useUpdateIntegrationGuide,
 } from '@/lib/queries'
+import { IntegrationGuideView } from '@/components/domain/IntegrationGuideView'
+import { fillGuide } from '@/lib/guide'
 import { ApiError } from '@/lib/api'
 import { formatNumber } from '@/lib/utils'
 import { useAuth } from '@/providers/AuthProvider'
@@ -50,7 +54,7 @@ export function AppDetailPage() {
   const { appId = '' } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [tab, setTab] = useState<'esquema' | 'general'>('esquema')
+  const [tab, setTab] = useState<'esquema' | 'api' | 'general'>('esquema')
   const [deleting, setDeleting] = useState(false)
 
   const { data, isPending, error } = useApp(appId)
@@ -122,15 +126,25 @@ export function AppDetailPage() {
 
       <Tabs
         active={tab}
-        onChange={(id) => setTab(id as 'esquema' | 'general')}
+        onChange={(id) => setTab(id as 'esquema' | 'api' | 'general')}
         items={[
           { id: 'esquema', label: 'Esquema de variables', icon: <Variable className="size-4" /> },
+          { id: 'api', label: 'API de la app', icon: <BookOpen className="size-4" /> },
           { id: 'general', label: 'Datos de la app', icon: <Pencil className="size-4" /> },
         ]}
       />
 
       {tab === 'esquema' && (
         <SchemaTab appId={appId} definitions={settingDefinitions} canManage={canManage} />
+      )}
+
+      {tab === 'api' && (
+        <ApiGuideTab
+          appId={appId}
+          apiBaseUrl={app.apiBaseUrl ?? null}
+          guide={data.integrationGuide ?? null}
+          canManage={canManage}
+        />
       )}
 
       {tab === 'general' && (
@@ -750,6 +764,121 @@ function GeneralTab({
           <Button variant="danger" icon={<Trash2 className="size-4" />} onClick={onDelete}>
             Eliminar
           </Button>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Guía de la API propia de la app: cómo la consume un sistema externo y qué devuelve. La edita la
+ * plataforma; cada empresa la ve en "Cómo integrar" con sus datos ya reemplazados.
+ */
+function ApiGuideTab({
+  appId,
+  apiBaseUrl,
+  guide,
+  canManage,
+}: {
+  appId: string
+  apiBaseUrl: string | null
+  guide: string | null
+  canManage: boolean
+}) {
+  const update = useUpdateIntegrationGuide(appId)
+  const [baseUrl, setBaseUrl] = useState(apiBaseUrl ?? '')
+  const [text, setText] = useState(guide ?? '')
+  const [editing, setEditing] = useState(false)
+
+  const dirty = baseUrl.trim() !== (apiBaseUrl ?? '') || text !== (guide ?? '')
+
+  const save = async () => {
+    try {
+      await update.mutateAsync({ apiBaseUrl: baseUrl.trim() || null, integrationGuide: text.trim() ? text : null })
+      toast.success('Guía guardada')
+      setEditing(false)
+    } catch (error) {
+      toast.error('No se pudo guardar la guía', {
+        description: error instanceof ApiError ? error.message : undefined,
+      })
+    }
+  }
+
+  // En el catálogo no hay empresa: el slug se muestra como marcador para que se vea dónde irá.
+  const shown = editing ? text : guide ?? ''
+  const rendered = fillGuide(shown, {
+    API_BASE_URL: (editing ? baseUrl.trim() : '') || apiBaseUrl,
+    TENANT_SLUG: '{empresa}',
+  })
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Card className="flex flex-col gap-4">
+        <CardHeader
+          title="API de la app"
+          description="Lo que necesita un sistema externo para consumir esta app. Cada empresa la ve en «Cómo integrar», con {{API_BASE_URL}} y {{TENANT_SLUG}} reemplazados por sus datos."
+          action={
+            canManage &&
+            !editing && (
+              <Button icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>
+                Editar
+              </Button>
+            )
+          }
+        />
+
+        {editing ? (
+          <>
+            <Input
+              label="URL base del API de la app"
+              value={baseUrl}
+              onChange={(event) => setBaseUrl(event.target.value)}
+              placeholder="https://mi-app-api.azurewebsites.net"
+              className="font-mono text-[0.8125rem]"
+            />
+            <Textarea
+              label="Guía (Markdown)"
+              rows={18}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              className="font-mono text-[0.75rem]"
+              hint="Títulos con ##, tablas y bloques de código entre tres acentos graves; cada bloque tendrá botón de copiar."
+            />
+            <div className="flex items-center justify-end gap-3 border-t border-line pt-4">
+              <Button
+                onClick={() => {
+                  setBaseUrl(apiBaseUrl ?? '')
+                  setText(guide ?? '')
+                  setEditing(false)
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                icon={<Save className="size-4" />}
+                onClick={save}
+                loading={update.isPending}
+                disabled={!dirty}
+              >
+                Guardar
+              </Button>
+            </div>
+          </>
+        ) : (
+          !guide && (
+            <EmptyState
+              icon={<BookOpen className="size-5" />}
+              title="Esta app no tiene guía de integración"
+              description="Sin guía, las empresas solo ven cómo leer la configuración desde One."
+            />
+          )
+        )}
+      </Card>
+
+      {shown.trim() && (
+        <Card>
+          <IntegrationGuideView source={rendered} />
         </Card>
       )}
     </div>

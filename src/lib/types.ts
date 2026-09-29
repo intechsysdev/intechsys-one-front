@@ -131,6 +131,8 @@ export interface AppSummary {
   launchUrl?: string | null
   /** Direcciones de retorno del código de autorización, una por línea. */
   redirectUris?: string | null
+  /** Raíz del API propio de la app, para la guía de integración. */
+  apiBaseUrl?: string | null
   settingCount: number
   tenantCount: number
   createdAt: string
@@ -157,6 +159,8 @@ export interface SettingDefinition {
 export interface AppDetail {
   app: AppSummary
   settingDefinitions: SettingDefinition[]
+  /** Guía de la API de la app, en Markdown. */
+  integrationGuide?: string | null
 }
 
 export interface TenantApp {
