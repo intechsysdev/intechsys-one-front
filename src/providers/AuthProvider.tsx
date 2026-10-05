@@ -45,6 +45,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionExpiredHandler(clearSession)
   }, [clearSession])
 
+  // Los tokens se comparten entre pestañas: si en otra se cerró sesión o entró otra persona,
+  // esta debe enterarse. Si no, seguía mostrando al usuario anterior mientras sus peticiones ya
+  // salían con el token del nuevo.
+  const currentUserId = user?.id
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== tokenStore.refreshKey) return
+
+      if (!tokenStore.refresh) {
+        setUser(null)
+        setStatus('anonymous')
+        queryClient.clear()
+        return
+      }
+
+      // Cambió el token: puede ser solo una rotación del mismo usuario, o un login nuevo.
+      void api
+        .get<CurrentUser>('/auth/me')
+        .then((me) => {
+          if (me.id === currentUserId) return
+          queryClient.clear()
+          setUser(me)
+          setStatus('authenticated')
+        })
+        .catch(() => {})
+    }
+
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [currentUserId, queryClient])
+
   // Rehidratación al abrir la aplicación: el token vive en localStorage,
   // pero la identidad siempre se vuelve a pedir al API.
   useEffect(() => {

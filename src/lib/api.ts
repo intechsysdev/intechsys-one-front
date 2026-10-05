@@ -32,6 +32,8 @@ export class ApiError extends Error {
 }
 
 export const tokenStore = {
+  /** Clave del token de refresco, para enterarse cuando otra pestaña lo cambia. */
+  refreshKey: REFRESH_TOKEN_KEY,
   get access() {
     return localStorage.getItem(ACCESS_TOKEN_KEY)
   },
