@@ -154,6 +154,8 @@ export interface SettingDefinition {
   allowedValues?: string | null
   group?: string | null
   displayOrder: number
+  /** Su valor identifica a la empresa cuando la app pide un código propio para entrar (p. ej. Client ID). */
+  identifiesTenant: boolean
 }
 
 export interface AppDetail {
@@ -359,4 +361,6 @@ export interface LaunchableApp {
 export interface SsoAuthorizeResponse {
   code: string
   expiresAt: string
+  /** Empresa con la que se emitió el código; con tenant_hint, la que One encontró. */
+  tenantId?: string | null
 }

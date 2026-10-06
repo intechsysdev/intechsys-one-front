@@ -20,6 +20,9 @@ const CUENTA_ELEGIDA = 'one.sso.cuentaElegida'
  * devuelve al usuario a la app al instante; si no, la ruta está protegida y el login trae de
  * vuelta aquí al terminar.
  *
+ * Con tenant_hint (una app en la que se entra con un código propio, como un Client ID) One busca
+ * la empresa cuya variable identificadora tiene ese valor y la devuelve en `tenant`.
+ *
  * Con prompt=select_account (lo manda la app desde su propio login, cuando alguien acaba de
  * salir) primero se pregunta con qué cuenta seguir, en vez de entrar en silencio con la que
  * tenga abierta el portal.
@@ -69,21 +72,25 @@ export function AuthorizePage() {
     const codeChallenge = params.get('code_challenge')!
     const state = params.get('state')
     const tenant = params.get('tenant')
+    // Código propio de la app (p. ej. Client ID) con el que One busca la empresa.
+    const tenantHint = params.get('tenant_hint')
 
     const authorize = async () => {
       try {
-        const { code } = await api.post<SsoAuthorizeResponse>('/api/v1/sso/authorize', {
+        const { code, tenantId } = await api.post<SsoAuthorizeResponse>('/api/v1/sso/authorize', {
           clientId,
           redirectUri,
           codeChallenge,
           codeChallengeMethod: params.get('code_challenge_method') ?? 'S256',
           tenantId: tenant || undefined,
+          tenantHint: tenant ? undefined : tenantHint || undefined,
         })
 
         const destination = new URL(redirectUri)
         destination.searchParams.set('code', code)
         if (state) destination.searchParams.set('state', state)
-        if (tenant) destination.searchParams.set('tenant', tenant)
+        const empresa = tenant || tenantId
+        if (empresa) destination.searchParams.set('tenant', empresa)
 
         // replace y no assign: volver atrás desde la app no debe caer otra vez aquí y pedir
         // un código nuevo en bucle.

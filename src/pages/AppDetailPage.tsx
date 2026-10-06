@@ -275,6 +275,7 @@ function SchemaTab({
                         </Badge>
                         {definition.isRequired && <Badge tone="critical">Obligatoria</Badge>}
                         {definition.isSecret && <Badge tone="accent">Secreta</Badge>}
+                        {definition.identifiesTenant && <Badge tone="info">Identifica a la empresa</Badge>}
                       </div>
 
                       {canManage && (
@@ -355,6 +356,7 @@ function DefinitionModal({
   const [dataType, setDataType] = useState<SettingDataType>('String')
   const [isRequired, setIsRequired] = useState(false)
   const [isSecret, setIsSecret] = useState(false)
+  const [identifiesTenant, setIdentifiesTenant] = useState(false)
   const [defaultValue, setDefaultValue] = useState('')
   const [group, setGroup] = useState('')
   const [allowedValues, setAllowedValues] = useState('')
@@ -370,6 +372,7 @@ function DefinitionModal({
     setDataType(definition?.dataType === 'Secret' ? 'String' : (definition?.dataType ?? 'String'))
     setIsRequired(definition?.isRequired ?? false)
     setIsSecret(definition?.isSecret ?? false)
+    setIdentifiesTenant(definition?.identifiesTenant ?? false)
     setDefaultValue(definition?.defaultValue ?? '')
     setGroup(definition?.group ?? '')
     setAllowedValues(definition?.allowedValues ?? '')
@@ -389,6 +392,7 @@ function DefinitionModal({
         dataType: isSecret ? 'Secret' : dataType,
         isRequired,
         isSecret,
+        identifiesTenant: identifiesTenant && !isSecret,
         defaultValue: isSecret ? null : defaultValue.trim() || null,
         allowedValues: allowedValues.trim() || null,
         group: group.trim() || null,
@@ -520,6 +524,18 @@ function DefinitionModal({
             onChange={setIsSecret}
             label="Valor secreto"
             description="Se cifra en la base de datos y solo se revela bajo petición explícita, que queda auditada."
+          />
+
+          <Switch
+            checked={identifiesTenant && !isSecret}
+            onChange={setIdentifiesTenant}
+            disabled={isSecret}
+            label="Identifica a la empresa al iniciar sesión"
+            description={
+              isSecret
+                ? 'No aplica a valores secretos: el usuario escribe el código a la vista.'
+                : 'Para apps en las que el usuario entra con un código propio, como un Client ID: One abre la app con la empresa que tenga ese valor. Solo una variable por app.'
+            }
           />
         </div>
       </div>
