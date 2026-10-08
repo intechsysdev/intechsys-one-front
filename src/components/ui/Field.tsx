@@ -15,7 +15,7 @@ const control =
   'hover:border-line-strong focus:border-accent focus:ring-3 focus:ring-[var(--ring)] ' +
   'disabled:cursor-not-allowed disabled:opacity-55'
 
-const invalid = 'border-critical focus:border-critical focus:ring-[oklch(0.6_0.2_25/0.3)]'
+const invalid = 'border-critical focus:border-critical focus:ring-[rgb(117_19_38/0.25)]'
 
 interface FieldShellProps {
   label?: string

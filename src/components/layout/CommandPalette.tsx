@@ -147,7 +147,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       {open && (
         <div className="fixed inset-0 z-60 flex items-start justify-center p-4 pt-[12vh]">
           <motion.div
-            className="fixed inset-0 bg-[oklch(0.12_0.02_265/0.5)] backdrop-blur-[3px]"
+            className="fixed inset-0 bg-[rgb(31_31_29/0.5)] backdrop-blur-[3px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

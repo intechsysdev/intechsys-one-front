@@ -33,7 +33,7 @@ export const emptyTenantForm: TenantFormValues = {
   contactPhone: '',
   website: '',
   logoUrl: '',
-  brandColor: '#6366f1',
+  brandColor: '#af1839',
   country: 'Colombia',
   city: '',
   address: '',
@@ -54,7 +54,7 @@ export function tenantToForm(tenant: Tenant): TenantFormValues {
     contactPhone: tenant.contactPhone ?? '',
     website: tenant.website ?? '',
     logoUrl: tenant.logoUrl ?? '',
-    brandColor: tenant.brandColor ?? '#6366f1',
+    brandColor: tenant.brandColor ?? '#af1839',
     country: tenant.country ?? '',
     city: tenant.city ?? '',
     address: tenant.address ?? '',
@@ -228,7 +228,7 @@ export function TenantForm({
             <input
               type="color"
               aria-label="Color de marca"
-              value={values.brandColor || '#6366f1'}
+              value={values.brandColor || '#af1839'}
               onChange={(event) => set('brandColor', event.target.value)}
               className="h-9.5 w-12 shrink-0 cursor-pointer rounded-lg border border-line bg-inset p-1"
             />
@@ -237,7 +237,7 @@ export function TenantForm({
               onChange={(event) => set('brandColor', event.target.value)}
               className="font-mono"
               wrapperClassName="flex-1"
-              placeholder="#6366f1"
+              placeholder="#af1839"
             />
           </div>
         </div>

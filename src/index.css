@@ -2,46 +2,63 @@
 
 @layer theme {
   :root {
+    /* ── Marca Intechsys ───────────────────────────────────────────────────
+       Carmesí para la acción y la firma de marca, carbón para el texto y las
+       superficies, ámbar para lo que pide atención.                          */
+    --brand-deep: #751326;
+    --brand: #af1839;
+    --brand-vivid: #e51e4a;
+    --brand-charcoal: #1f1f1d;
+    --brand-graphite: #3c3c3b;
+    --brand-slate: #5a5958;
+    --brand-amber: #da830b;
+    --brand-gold: #f8b21d;
+    /* La barra de la guía de marca: profundo → vivo → profundo. */
+    --brand-gradient: linear-gradient(135deg, var(--brand-deep), var(--brand-vivid));
+    --brand-band: linear-gradient(90deg, var(--brand-deep), var(--brand-vivid) 50%, var(--brand-deep));
+
     /* ── Superficies ───────────────────────────────────────────────────────
-       Escala de grises con una pizca de azul: separa los planos sin que el
-       ojo lea "gris sucio" en pantallas grandes.                            */
-    --surface-base: oklch(0.985 0.002 265);
-    --surface-sunken: oklch(0.965 0.004 265);
-    --surface-raised: oklch(1 0 0);
-    --surface-overlay: oklch(1 0 0);
-    --surface-inset: oklch(0.955 0.005 265);
+       Blancos cálidos que acompañan al carbón de la marca (no grises azules). */
+    --surface-base: #fbfaf9;
+    --surface-sunken: #f4f3f1;
+    --surface-raised: #ffffff;
+    --surface-overlay: #ffffff;
+    --surface-inset: #f1f0ee;
 
-    --border-subtle: oklch(0.912 0.006 265);
-    --border-strong: oklch(0.845 0.009 265);
+    --border-subtle: #e6e4e1;
+    --border-strong: #d3d1cd;
 
-    --text-primary: oklch(0.21 0.014 265);
-    --text-secondary: oklch(0.45 0.013 265);
-    --text-muted: oklch(0.58 0.012 265);
+    --text-primary: var(--brand-charcoal);
+    --text-secondary: var(--brand-graphite);
+    --text-muted: var(--brand-slate);
 
-    /* ── Acentos ───────────────────────────────────────────────────────── */
-    --accent: oklch(0.55 0.208 285);
-    --accent-hover: oklch(0.5 0.21 285);
-    --accent-soft: oklch(0.95 0.03 285);
-    --accent-border: oklch(0.86 0.07 285);
-    --accent-contrast: oklch(0.99 0 0);
+    /* ── Acentos ───────────────────────────────────────────────────────────
+       El carmesí medio es el de los botones: con texto blanco pasa AA.       */
+    --accent: var(--brand);
+    --accent-hover: var(--brand-deep);
+    --accent-soft: #fbebee;
+    --accent-border: #edb6c2;
+    --accent-contrast: #ffffff;
 
-    --positive: oklch(0.58 0.14 155);
+    --positive: oklch(0.55 0.13 155);
     --positive-soft: oklch(0.95 0.04 155);
-    --caution: oklch(0.68 0.15 70);
-    --caution-soft: oklch(0.96 0.05 75);
-    --critical: oklch(0.56 0.2 25);
-    --critical-soft: oklch(0.96 0.03 25);
-    --info: oklch(0.6 0.13 230);
-    --info-soft: oklch(0.95 0.04 230);
+    /* El ámbar de marca no se lee como texto sobre claro: se oscurece. */
+    --caution: #a35f07;
+    --caution-soft: #fdf1dc;
+    /* Peligro: el carmesí profundo, más oscuro que el botón principal para no confundirlos. */
+    --critical: var(--brand-deep);
+    --critical-soft: #f9e8eb;
+    --info: var(--brand-graphite);
+    --info-soft: #efeeec;
 
     /* ── Entornos ──────────────────────────────────────────────────────────
        Color como señal de riesgo: producción siempre destaca.               */
-    --env-development: oklch(0.6 0.13 230);
-    --env-staging: oklch(0.68 0.15 70);
-    --env-production: oklch(0.56 0.2 25);
+    --env-development: var(--brand-slate);
+    --env-staging: var(--brand-amber);
+    --env-production: var(--brand-vivid);
 
-    --ring: oklch(0.55 0.208 285 / 0.45);
-    --shadow-color: 265 25% 25%;
+    --ring: rgb(229 30 74 / 0.4);
+    --shadow-color: 30 6% 15%;
 
     --radius: 0.75rem;
     --sidebar-width: 16.5rem;
@@ -51,41 +68,44 @@
     color-scheme: light;
   }
 
-  :root[data-theme='dark'] {
-    --surface-base: oklch(0.165 0.014 265);
-    --surface-sunken: oklch(0.135 0.014 265);
-    --surface-raised: oklch(0.205 0.015 265);
-    --surface-overlay: oklch(0.235 0.016 265);
-    --surface-inset: oklch(0.185 0.014 265);
+  /* .tema-oscuro: un bloque que va siempre en oscuro (el panel de marca del login). */
+  :root[data-theme='dark'],
+  .tema-oscuro {
+    --surface-base: #1f1f1d;
+    --surface-sunken: #181817;
+    --surface-raised: #262624;
+    --surface-overlay: #2e2e2c;
+    --surface-inset: #232321;
 
-    --border-subtle: oklch(0.285 0.016 265);
-    --border-strong: oklch(0.375 0.02 265);
+    --border-subtle: #353533;
+    --border-strong: #4a4947;
 
-    --text-primary: oklch(0.97 0.004 265);
-    --text-secondary: oklch(0.76 0.012 265);
-    --text-muted: oklch(0.62 0.014 265);
+    --text-primary: #f3f2ef;
+    --text-secondary: #c9c7c3;
+    --text-muted: #9a9894;
 
-    --accent: oklch(0.68 0.17 285);
-    --accent-hover: oklch(0.74 0.16 285);
-    --accent-soft: oklch(0.3 0.08 285);
-    --accent-border: oklch(0.42 0.12 285);
-    --accent-contrast: oklch(0.15 0.02 285);
+    /* Sobre carbón brilla el carmesí vivo. */
+    --accent: var(--brand-vivid);
+    --accent-hover: #f2456b;
+    --accent-soft: #3a1620;
+    --accent-border: #6b1c2e;
+    --accent-contrast: #ffffff;
 
     --positive: oklch(0.75 0.16 155);
     --positive-soft: oklch(0.28 0.07 155);
-    --caution: oklch(0.8 0.15 75);
-    --caution-soft: oklch(0.3 0.07 75);
-    --critical: oklch(0.68 0.19 22);
-    --critical-soft: oklch(0.3 0.09 22);
-    --info: oklch(0.72 0.13 230);
-    --info-soft: oklch(0.28 0.07 230);
+    --caution: var(--brand-gold);
+    --caution-soft: #3a2b0e;
+    --critical: #f2456b;
+    --critical-soft: #3d1520;
+    --info: #c9c7c3;
+    --info-soft: #2e2e2c;
 
-    --env-development: oklch(0.72 0.13 230);
-    --env-staging: oklch(0.8 0.15 75);
-    --env-production: oklch(0.68 0.19 22);
+    --env-development: #9a9894;
+    --env-staging: var(--brand-gold);
+    --env-production: #f2456b;
 
-    --ring: oklch(0.68 0.17 285 / 0.5);
-    --shadow-color: 265 60% 3%;
+    --ring: rgb(229 30 74 / 0.55);
+    --shadow-color: 0 0% 0%;
 
     color-scheme: dark;
   }

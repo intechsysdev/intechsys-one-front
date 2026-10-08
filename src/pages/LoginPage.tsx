@@ -143,7 +143,7 @@ export function LoginPage() {
 function BrandLockup() {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-info shadow-[0_4px_16px_-4px_var(--accent)]">
+      <span className="flex size-10 items-center justify-center rounded-xl shadow-[0_4px_16px_-4px_var(--brand-vivid)]" style={{ backgroundImage: 'var(--brand-gradient)' }}>
         <span className="size-3.5 rounded-full border-2 border-[var(--accent-contrast)]" />
       </span>
       <span className="flex flex-col leading-none">
@@ -156,15 +156,18 @@ function BrandLockup() {
 
 function BrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-sunken lg:flex lg:flex-col lg:justify-between lg:p-12">
+    // Siempre en carbón: es la cara de la marca, con el carmesí y el ámbar como luz.
+    <div className="tema-oscuro relative hidden overflow-hidden bg-sunken text-ink lg:flex lg:flex-col lg:justify-between lg:p-12">
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            'radial-gradient(ellipse 50rem 40rem at 20% 20%, var(--accent-soft), transparent 60%), radial-gradient(ellipse 40rem 30rem at 85% 85%, var(--info-soft), transparent 55%)',
+            'radial-gradient(ellipse 50rem 40rem at 15% 10%, rgb(229 30 74 / 0.28), transparent 60%), radial-gradient(ellipse 40rem 30rem at 90% 95%, rgb(248 178 29 / 0.16), transparent 55%)',
         }}
         aria-hidden
       />
+      {/* La franja de la guía de marca: profundo → vivo → profundo. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1.5" style={{ backgroundImage: 'var(--brand-band)' }} aria-hidden />
       <div className="grid-pattern pointer-events-none absolute inset-0 opacity-40" aria-hidden />
 
       <div className="relative">

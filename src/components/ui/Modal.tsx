@@ -68,7 +68,7 @@ export function Modal({
       {open && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6">
           <motion.div
-            className="fixed inset-0 bg-[oklch(0.12_0.02_265/0.55)] backdrop-blur-[2px]"
+            className="fixed inset-0 bg-[rgb(31_31_29/0.55)] backdrop-blur-[2px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

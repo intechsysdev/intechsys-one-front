@@ -112,7 +112,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 function BrandMark() {
   return (
     <div className="flex items-center gap-2.5 px-3 py-1">
-      <span className="relative flex size-8 items-center justify-center rounded-[0.625rem] bg-gradient-to-br from-accent to-info shadow-[0_2px_8px_-2px_var(--accent)]">
+      <span className="relative flex size-8 items-center justify-center rounded-[0.625rem] shadow-[0_2px_8px_-2px_var(--brand-vivid)]" style={{ backgroundImage: 'var(--brand-gradient)' }}>
         <span className="size-3 rounded-full border-2 border-[var(--accent-contrast)]" />
       </span>
 

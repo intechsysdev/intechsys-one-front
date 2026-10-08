@@ -46,7 +46,7 @@ export function AppShell() {
       {mobileNavOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-[oklch(0.12_0.02_265/0.5)] lg:hidden"
+            className="fixed inset-0 z-40 bg-[rgb(31_31_29/0.5)] lg:hidden"
             onClick={() => setMobileNavOpen(false)}
           />
           <motion.aside
