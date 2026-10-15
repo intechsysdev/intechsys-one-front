@@ -44,8 +44,8 @@ const sections: { title: string; entries: NavEntry[] }[] = [
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { user, isManager } = useAuth()
-  const isSupport = user?.roles.includes('PlatformSupport') ?? false
-  const canSeeAdmin = (user?.isPlatformAdmin ?? false) || isSupport
+  // Usuarios y auditoría son del administrador de plataforma; soporte opera, no administra.
+  const canSeeAdmin = user?.isPlatformAdmin ?? false
 
   return (
     <nav className="flex h-full flex-col gap-6 overflow-y-auto px-3 py-4" aria-label="Principal">
@@ -61,8 +61,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           return (
             <div key={section.title} className="flex flex-col gap-1">
               {/* Con solo dos entradas los títulos sobran, y "Administración" sobre "Mi cuenta"
-                  confundiría a quien no administra nada. */}
-              {isManager && (
+                  confundiría a quien no administra nada: el título va solo si la sección tiene
+                  algo más que lo de todos. */}
+              {isManager && entries.some((entry) => !entry.everyone) && (
                 <p className="px-3 pb-1 text-[0.6875rem] font-semibold tracking-[0.08em] text-ink-muted uppercase">
                   {section.title}
                 </p>

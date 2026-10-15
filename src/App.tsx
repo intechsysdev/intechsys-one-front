@@ -39,8 +39,10 @@ export function App() {
             <Route path="empresas/:tenantId/apps/:tenantAppId" element={<TenantAppPage />} />
             <Route path="apps" element={<AppsPage />} />
             <Route path="apps/:appId" element={<AppDetailPage />} />
-            <Route path="usuarios" element={<UsersPage />} />
-            <Route path="auditoria" element={<AuditPage />} />
+            <Route element={<RequirePlatformAdmin />}>
+              <Route path="usuarios" element={<UsersPage />} />
+              <Route path="auditoria" element={<AuditPage />} />
+            </Route>
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />
@@ -53,6 +55,12 @@ export function App() {
 function RequireManager() {
   const { isManager } = useAuth()
   return isManager ? <Outlet /> : <Navigate to="/" replace />
+}
+
+/** Usuarios y auditoría: solo el administrador de plataforma, no soporte. */
+function RequirePlatformAdmin() {
+  const { user } = useAuth()
+  return user?.isPlatformAdmin ? <Outlet /> : <Navigate to="/" replace />
 }
 
 function RequireAuth() {
