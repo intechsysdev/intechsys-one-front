@@ -23,6 +23,26 @@ const queryClient = new QueryClient({
   },
 })
 
+/**
+ * El portal tiene una sola dirección. La sesión de One vive en el almacenamiento del navegador de
+ * ese dominio: quien entra por intechsysone.com y luego llega por la dirección de Azure (o con www)
+ * está, para el navegador, en otro sitio y sin sesión, y las apps le pedirían entrar otra vez. Quien
+ * llega por un alias se lleva al dominio principal con la misma ruta, /autorizar y sus parámetros
+ * incluidos.
+ */
+const principal = (import.meta.env.VITE_PORTAL_URL ?? '').replace(/\/+$/, '')
+const alias = (import.meta.env.VITE_PORTAL_ALIAS ?? '')
+  .split(',')
+  .map((host: string) => host.trim().toLowerCase())
+  .filter(Boolean)
+
+if (principal && alias.includes(window.location.hostname.toLowerCase())) {
+  window.location.replace(principal + window.location.pathname + window.location.search + window.location.hash)
+} else {
+  renderizar()
+}
+
+function renderizar() {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -48,3 +68,4 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 )
+}
