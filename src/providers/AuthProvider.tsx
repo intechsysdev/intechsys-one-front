@@ -21,9 +21,9 @@ interface AuthContextValue {
   roleIn: (tenantId: string) => TenantRole | null
   canManageTenant: (tenantId: string) => boolean
   /**
-   * Si administra el portal: solo los roles de plataforma (administrador y soporte de Intechsys).
-   * Para todos los demás, incluso el dueño o administrador de una empresa, el portal es el
-   * lanzador de sus apps y su cuenta: empresas, catálogo y variables los gestiona Intechsys.
+   * Si administra el portal: solo el administrador de plataforma. Para todos los demás (soporte,
+   * dueños y administradores de empresa, miembros) el portal es el lanzador de sus apps y su
+   * cuenta: empresas, catálogo, usuarios y variables los gestiona el administrador.
    */
   isManager: boolean
 }
@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const role = roleIn(tenantId)
         return role === 'Owner' || role === 'Admin'
       },
-      isManager: (user?.isPlatformAdmin ?? false) || (user?.roles.includes('PlatformSupport') ?? false),
+      isManager: user?.isPlatformAdmin ?? false,
     }
   }, [user, status, login, logout, refreshUser])
 
