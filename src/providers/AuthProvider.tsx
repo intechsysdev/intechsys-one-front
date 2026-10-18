@@ -9,12 +9,19 @@ import {
 } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { api, setSessionExpiredHandler, tokenStore } from '@/lib/api'
-import type { AuthResponse, CurrentUser, TenantRole } from '@/lib/types'
+import { ApiError } from '@/lib/api'
+import type { AuthResponse, CurrentUser, TenantRole, TwoFactorChallenge } from '@/lib/types'
 
 interface AuthContextValue {
   user: CurrentUser | null
   status: 'loading' | 'authenticated' | 'anonymous'
-  login: (email: string, password: string) => Promise<void>
+  /**
+   * Valida la contraseña. Si la cuenta tiene verificación en dos pasos y este navegador no está
+   * recordado, no abre sesión: devuelve la constancia para pedir el código.
+   */
+  login: (email: string, password: string) => Promise<TwoFactorChallenge | null>
+  /** Segundo paso del login: el código de la app o uno de recuperación. */
+  completeTwoFactor: (email: string, challengeToken: string, code: string, rememberDevice: boolean) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   /** Rol del usuario en la empresa indicada, o null si no pertenece a ella. */
@@ -29,6 +36,28 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
+
+/**
+ * "Recordar este equipo": la constancia que da el API al verificar el código, por correo (en un
+ * mismo navegador pueden entrar varias personas). Con ella vigente el login no vuelve a pedirlo.
+ */
+const trustedDevices = {
+  key: (email: string) => `one.equipo.${email.trim().toLowerCase()}`,
+  get(email: string) {
+    try {
+      return localStorage.getItem(this.key(email)) ?? undefined
+    } catch {
+      return undefined
+    }
+  },
+  set(email: string, token: string) {
+    try {
+      localStorage.setItem(this.key(email), token)
+    } catch {
+      /* sin almacenamiento: se pedirá el código la próxima vez */
+    }
+  },
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null)
@@ -107,16 +136,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession])
 
   const login = useCallback(async (email: string, password: string) => {
-    const auth = await api.post<AuthResponse>(
-      '/auth/login',
-      { email, password },
-      { anonymous: true },
-    )
+    try {
+      const auth = await api.post<AuthResponse>(
+        '/auth/login',
+        { email, password, trustedDevice: trustedDevices.get(email) },
+        { anonymous: true },
+      )
 
-    tokenStore.save(auth)
-    setUser(auth.user)
-    setStatus('authenticated')
+      tokenStore.save(auth)
+      setUser(auth.user)
+      setStatus('authenticated')
+      return null
+    } catch (caught) {
+      // La contraseña es correcta pero falta el código: el API responde 403 con la constancia.
+      if (caught instanceof ApiError && caught.payload?.requiresTwoFactor === true) {
+        return { challengeToken: String(caught.payload.challengeToken) }
+      }
+      throw caught
+    }
   }, [])
+
+  const completeTwoFactor = useCallback(
+    async (email: string, challengeToken: string, code: string, rememberDevice: boolean) => {
+      const auth = await api.post<AuthResponse>(
+        '/auth/login/2fa',
+        { challengeToken, code, rememberDevice },
+        { anonymous: true },
+      )
+
+      if (auth.trustedDevice) trustedDevices.set(email, auth.trustedDevice)
+      tokenStore.save(auth)
+      setUser(auth.user)
+      setStatus('authenticated')
+    },
+    [],
+  )
 
   const logout = useCallback(async () => {
     const refreshToken = tokenStore.refresh
@@ -142,6 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       status,
       login,
+      completeTwoFactor,
       logout,
       refreshUser,
       roleIn,
@@ -152,7 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       isManager: user?.isPlatformAdmin ?? false,
     }
-  }, [user, status, login, logout, refreshUser])
+  }, [user, status, login, completeTwoFactor, logout, refreshUser])
 
   return <AuthContext value={value}>{children}</AuthContext>
 }

@@ -14,12 +14,20 @@ export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().rep
 export class ApiError extends Error {
   readonly status: number
   readonly fieldErrors?: Record<string, string[]>
+  /** El cuerpo completo de la respuesta, para los errores que traen datos (p. ej. el login en dos pasos). */
+  readonly payload?: Record<string, unknown>
 
-  constructor(status: number, message: string, fieldErrors?: Record<string, string[]>) {
+  constructor(
+    status: number,
+    message: string,
+    fieldErrors?: Record<string, string[]>,
+    payload?: Record<string, unknown>,
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.fieldErrors = fieldErrors
+    this.payload = payload
   }
 
   get isUnauthorized() {
@@ -121,12 +129,13 @@ function buildUrl(path: string, query?: RequestOptions['query']) {
 async function parseError(response: Response): Promise<ApiError> {
   let message = `Error ${response.status}`
   let fieldErrors: Record<string, string[]> | undefined
+  let payload: Record<string, unknown> | undefined
 
   try {
-    const payload = await response.json()
+    const body = await response.json()
 
-    if (payload && typeof payload === 'object') {
-      const problem = payload as {
+    if (body && typeof body === 'object') {
+      const problem = body as {
         detail?: string
         title?: string
         errors?: Record<string, string[]>
@@ -134,12 +143,13 @@ async function parseError(response: Response): Promise<ApiError> {
 
       message = problem.detail || problem.title || message
       fieldErrors = problem.errors
+      payload = body as Record<string, unknown>
     }
   } catch {
     // Respuesta sin cuerpo JSON: se conserva el mensaje genérico.
   }
 
-  return new ApiError(response.status, message, fieldErrors)
+  return new ApiError(response.status, message, fieldErrors, payload)
 }
 
 async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {

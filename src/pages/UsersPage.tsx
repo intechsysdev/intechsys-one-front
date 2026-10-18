@@ -7,6 +7,7 @@ import {
   Plus,
   Search,
   ShieldCheck,
+  ShieldOff,
   Trash2,
   Unlock,
   UserRound,
@@ -21,6 +22,7 @@ import {
   useCreateUser,
   useDeleteUser,
   useResetPassword,
+  useResetTwoFactor,
   useRoles,
   useToggleUserLock,
   useUpdateUser,
@@ -69,6 +71,25 @@ export function UsersPage() {
     }
   }
 
+  const resetTwoFactor = useResetTwoFactor()
+  const [resettingTwoFactor, setResettingTwoFactor] = useState<UserListItem>()
+
+  const confirmResetTwoFactor = async () => {
+    if (!resettingTwoFactor) return
+
+    try {
+      await resetTwoFactor.mutateAsync(resettingTwoFactor.id)
+      toast.success('Verificación en dos pasos quitada', {
+        description: 'Entrará solo con su contraseña y podrá activarla de nuevo en Mi cuenta.',
+      })
+      setResettingTwoFactor(undefined)
+    } catch (error) {
+      toast.error('No se pudo quitar', {
+        description: error instanceof ApiError ? error.message : undefined,
+      })
+    }
+  }
+
   const changeLock = async (user: UserListItem) => {
     try {
       await toggleLock.mutateAsync({ id: user.id, locked: !user.isLockedOut })
@@ -88,7 +109,12 @@ export function UsersPage() {
         <div className="flex items-center gap-3">
           <Avatar name={user.fullName} src={user.avatarUrl} />
           <div className="min-w-0">
-            <p className="truncate font-medium text-ink">{user.fullName}</p>
+            <p className="flex items-center gap-1.5 truncate font-medium text-ink">
+              {user.fullName}
+              {user.twoFactorEnabled && (
+                <ShieldCheck className="size-3.5 shrink-0 text-positive" aria-label="Verificación en dos pasos activa" />
+              )}
+            </p>
             <p className="truncate text-[0.75rem] text-ink-muted">{user.email}</p>
           </div>
         </div>
@@ -188,6 +214,18 @@ export function UsersPage() {
               >
                 Restablecer contraseña
               </MenuItem>
+
+              {user.twoFactorEnabled && (
+                <MenuItem
+                  icon={<ShieldOff className="size-4" />}
+                  onClick={() => {
+                    close()
+                    setResettingTwoFactor(user)
+                  }}
+                >
+                  Quitar verificación en dos pasos
+                </MenuItem>
+              )}
 
               <MenuItem
                 icon={user.isLockedOut ? <Unlock className="size-4" /> : <Lock className="size-4" />}
@@ -302,6 +340,22 @@ export function UsersPage() {
           <>
             Se eliminará la cuenta de <strong className="text-ink">{removing?.fullName}</strong> y su
             pertenencia a todas las empresas. No se puede deshacer.
+          </>
+        }
+      />
+
+      <ConfirmDialog
+        open={Boolean(resettingTwoFactor)}
+        onClose={() => setResettingTwoFactor(undefined)}
+        onConfirm={confirmResetTwoFactor}
+        loading={resetTwoFactor.isPending}
+        title="Quitar verificación en dos pasos"
+        confirmLabel="Quitar"
+        description={
+          <>
+            <strong className="text-ink">{resettingTwoFactor?.fullName}</strong> entrará solo con su
+            contraseña, y la cuenta de su app de autenticación dejará de servir. Úselo cuando perdió el
+            teléfono y sus códigos de recuperación, después de confirmar su identidad.
           </>
         }
       />

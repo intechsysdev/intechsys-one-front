@@ -53,6 +53,8 @@ export interface AuthResponse {
   expiresAt: string
   expiresInSeconds: number
   user: CurrentUser
+  /** Solo si se pidió recordar el equipo al verificar el segundo factor. */
+  trustedDevice?: string | null
 }
 
 export interface Tenant {
@@ -254,6 +256,7 @@ export interface UserListItem {
   tenantCount: number
   createdAt: string
   lastLoginAt?: string | null
+  twoFactorEnabled?: boolean
 }
 
 export interface UserDetail {
@@ -363,4 +366,27 @@ export interface SsoAuthorizeResponse {
   expiresAt: string
   /** Empresa con la que se emitió el código; con tenant_hint, la que One encontró. */
   tenantId?: string | null
+}
+
+// ---------------- Verificación en dos pasos ----------------
+
+export interface TwoFactorStatus {
+  enabled: boolean
+  recoveryCodesLeft: number
+}
+
+export interface TwoFactorSetup {
+  /** La clave en grupos de cuatro, para escribirla a mano. */
+  sharedKey: string
+  /** URI otpauth:// que va dentro del QR. */
+  authenticatorUri: string
+}
+
+export interface RecoveryCodes {
+  codes: string[]
+}
+
+/** El login con contraseña quedó a la espera del código de la app. */
+export interface TwoFactorChallenge {
+  challengeToken: string
 }

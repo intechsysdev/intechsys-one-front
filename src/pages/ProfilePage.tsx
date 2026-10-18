@@ -7,12 +7,13 @@ import { Input, Select } from '@/components/ui/Field'
 import { Avatar, Badge, Card, CardHeader, PageHeader } from '@/components/ui/Primitives'
 import { api, ApiError } from '@/lib/api'
 import { tenantRoleMeta } from '@/lib/utils'
+import { TwoFactorCard } from '@/components/domain/TwoFactorCard'
 import { useAuth } from '@/providers/AuthProvider'
 import { useTheme } from '@/providers/ThemeProvider'
 import type { CurrentUser } from '@/lib/types'
 
 export function ProfilePage() {
-  const { user, refreshUser } = useAuth()
+  const { user, refreshUser, isManager } = useAuth()
   const { theme, setTheme } = useTheme()
 
   const [firstName, setFirstName] = useState('')
@@ -64,7 +65,7 @@ export function ProfilePage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Mi cuenta"
-        description="Sus datos personales, su contraseña y las empresas a las que pertenece."
+        description="Sus datos personales, su contraseña, la verificación en dos pasos y las empresas a las que pertenece."
       />
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
@@ -120,6 +121,8 @@ export function ProfilePage() {
           </Card>
 
           <PasswordCard />
+
+          <TwoFactorCard />
         </div>
 
         <div className="flex flex-col gap-4">
@@ -157,8 +160,11 @@ export function ProfilePage() {
                 {user.memberships.map((membership) => (
                   <li key={membership.tenantId}>
                     <Link
-                      to={`/empresas/${membership.tenantId}`}
-                      className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-inset"
+                      to={isManager ? `/empresas/${membership.tenantId}` : '#'}
+                      onClick={(event) => {
+                        if (!isManager) event.preventDefault()
+                      }}
+                      className={`flex items-center gap-3 rounded-lg px-2 py-2 transition-colors ${isManager ? 'hover:bg-inset' : 'cursor-default'}`}
                     >
                       <Avatar name={membership.tenantName} src={membership.logoUrl} size="sm" square />
                       <span className="min-w-0 flex-1">

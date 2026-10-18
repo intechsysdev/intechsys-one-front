@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowRight, Blocks, Building2, KeyRound, Lock, Mail, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Blocks, Building2, KeyRound, Lock, Mail, ShieldCheck, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Field'
+import { Input, Switch } from '@/components/ui/Field'
 import { ApiError } from '@/lib/api'
 import { useAuth } from '@/providers/AuthProvider'
 
@@ -26,12 +26,18 @@ const highlights = [
 ]
 
 export function LoginPage() {
-  const { status, login } = useAuth()
+  const { status, login, completeTwoFactor } = useAuth()
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
+
+  // Segundo paso: la contraseña ya se validó y falta el código de la app.
+  const [challenge, setChallenge] = useState<string>()
+  const [code, setCode] = useState('')
+  const [useRecovery, setUseRecovery] = useState(false)
+  const [rememberDevice, setRememberDevice] = useState(false)
 
   const from = (location.state as { from?: string } | null)?.from ?? '/'
 
@@ -47,8 +53,24 @@ export function LoginPage() {
     setSubmitting(true)
 
     try {
-      await login(email.trim(), password)
+      if (challenge) {
+        await completeTwoFactor(email.trim(), challenge, code, rememberDevice)
+        return
+      }
+
+      const pending = await login(email.trim(), password)
+      if (pending) {
+        setChallenge(pending.challengeToken)
+        setCode('')
+        setUseRecovery(false)
+      }
     } catch (caught) {
+      // La constancia del primer paso dura cinco minutos: vencida, se vuelve a la contraseña.
+      if (challenge && caught instanceof ApiError && caught.status === 401 && caught.message.includes('venció')) {
+        setChallenge(undefined)
+        setPassword('')
+      }
+
       setError(
         caught instanceof ApiError
           ? caught.message
@@ -75,36 +97,67 @@ export function LoginPage() {
           </div>
 
           <h1 className="text-[1.5rem] leading-tight font-semibold tracking-[-0.02em] text-ink">
-            Iniciar sesión
+            {challenge ? 'Verificación en dos pasos' : 'Iniciar sesión'}
           </h1>
           <p className="mt-1.5 text-[0.875rem] text-ink-muted">
-            {forApp
-              ? 'Inicie sesión con su cuenta de One para continuar a la aplicación.'
-              : 'Acceda con su cuenta corporativa para administrar empresas y accesos.'}
+            {challenge
+              ? useRecovery
+                ? 'Escriba uno de sus códigos de recuperación. Cada uno sirve una sola vez.'
+                : 'Abra la app de autenticación en su teléfono y escriba el código de seis dígitos.'
+              : forApp
+                ? 'Inicie sesión con su cuenta de One para continuar a la aplicación.'
+                : 'Acceda con su cuenta corporativa para administrar empresas y accesos.'}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4" noValidate>
-            <Input
-              label="Correo corporativo"
-              type="email"
-              autoComplete="username"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="nombre@empresa.com"
-              leading={<Mail className="size-4" />}
-            />
+            {challenge ? (
+              <>
+                <Input
+                  key={useRecovery ? 'recuperacion' : 'app'}
+                  label={useRecovery ? 'Código de recuperación' : 'Código de la app'}
+                  inputMode={useRecovery ? 'text' : 'numeric'}
+                  autoComplete="one-time-code"
+                  autoFocus
+                  maxLength={useRecovery ? 20 : 7}
+                  required
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                  placeholder={useRecovery ? 'xxxxx-xxxxx' : '123 456'}
+                  leading={useRecovery ? <KeyRound className="size-4" /> : <Smartphone className="size-4" />}
+                />
 
-            <Input
-              label="Contraseña"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••••"
-              leading={<Lock className="size-4" />}
-            />
+                <Switch
+                  checked={rememberDevice}
+                  onChange={setRememberDevice}
+                  label="Recordar este equipo por 30 días"
+                  description="No vuelva a pedir el código en este navegador. Úselo solo en un equipo propio."
+                />
+              </>
+            ) : (
+              <>
+                <Input
+                  label="Correo corporativo"
+                  type="email"
+                  autoComplete="username"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="nombre@empresa.com"
+                  leading={<Mail className="size-4" />}
+                />
+
+                <Input
+                  label="Contraseña"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="••••••••••"
+                  leading={<Lock className="size-4" />}
+                />
+              </>
+            )}
 
             {error && (
               <motion.p
@@ -124,9 +177,36 @@ export function LoginPage() {
               loading={submitting}
               className="mt-1 w-full"
             >
-              Entrar
+              {challenge ? 'Verificar' : 'Entrar'}
               {!submitting && <ArrowRight className="size-4" />}
             </Button>
+
+            {challenge && (
+              <div className="flex items-center justify-between gap-3 text-[0.8125rem]">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 text-ink-muted hover:text-ink"
+                  onClick={() => {
+                    setChallenge(undefined)
+                    setError(undefined)
+                    setPassword('')
+                  }}
+                >
+                  <ArrowLeft className="size-3.5" /> Volver
+                </button>
+                <button
+                  type="button"
+                  className="font-medium text-accent hover:underline"
+                  onClick={() => {
+                    setUseRecovery(!useRecovery)
+                    setCode('')
+                    setError(undefined)
+                  }}
+                >
+                  {useRecovery ? 'Usar el código de la app' : 'No tengo el teléfono'}
+                </button>
+              </div>
+            )}
           </form>
 
           <p className="mt-7 flex items-start gap-2 text-[0.75rem] leading-relaxed text-ink-muted">

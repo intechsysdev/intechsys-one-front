@@ -519,6 +519,18 @@ export function useResetPassword() {
   })
 }
 
+export function useResetTwoFactor() {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => api.post<void>(`/users/${id}/reset-2fa`),
+    onSuccess: (_data, id) => {
+      void client.invalidateQueries({ queryKey: keys.user(id) })
+      void client.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+}
+
 export function useToggleUserLock() {
   const client = useQueryClient()
 
