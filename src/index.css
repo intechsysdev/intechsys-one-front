@@ -261,6 +261,23 @@
   }
 }
 
+/* Código de verificación: el cursor que parpadea en el recuadro activo y el dígito que entra. */
+.otp-caret {
+  animation: otp-caret 1.1s steps(1) infinite;
+}
+
+@keyframes otp-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes otp-pop {
+  from {
+    transform: scale(0.92);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

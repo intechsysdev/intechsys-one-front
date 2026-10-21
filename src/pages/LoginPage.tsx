@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowLeft, ArrowRight, Blocks, Building2, KeyRound, Lock, Mail, ShieldCheck, Smartphone } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Blocks, Building2, KeyRound, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { CodeInput } from '@/components/ui/CodeInput'
 import { Input, Switch } from '@/components/ui/Field'
 import { ApiError } from '@/lib/api'
 import { useAuth } from '@/providers/AuthProvider'
@@ -38,6 +39,7 @@ export function LoginPage() {
   const [code, setCode] = useState('')
   const [useRecovery, setUseRecovery] = useState(false)
   const [rememberDevice, setRememberDevice] = useState(false)
+  const codeInput = useRef<HTMLInputElement>(null)
 
   const from = (location.state as { from?: string } | null)?.from ?? '/'
 
@@ -47,14 +49,20 @@ export function LoginPage() {
 
   if (status === 'authenticated') return <Navigate to={from} replace />
 
-  const handleSubmit = async (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
+    void submit(code)
+  }
+
+  // El código de la app se verifica solo al completar los seis dígitos; también con el botón.
+  const submit = async (twoFactorCode: string) => {
+    if (submitting) return
     setError(undefined)
     setSubmitting(true)
 
     try {
       if (challenge) {
-        await completeTwoFactor(email.trim(), challenge, code, rememberDevice)
+        await completeTwoFactor(email.trim(), challenge, twoFactorCode, rememberDevice)
         return
       }
 
@@ -76,6 +84,12 @@ export function LoginPage() {
           ? caught.message
           : 'No se pudo conectar con el servidor. Verifique que el API esté en ejecución.',
       )
+
+      // Código rechazado: se borra para escribir el siguiente sin tener que limpiar los recuadros.
+      if (challenge && !useRecovery) {
+        setCode('')
+        requestAnimationFrame(() => codeInput.current?.focus())
+      }
     } finally {
       setSubmitting(false)
     }
@@ -112,26 +126,39 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4" noValidate>
             {challenge ? (
               <>
-                <Input
-                  key={useRecovery ? 'recuperacion' : 'app'}
-                  label={useRecovery ? 'Código de recuperación' : 'Código de la app'}
-                  inputMode={useRecovery ? 'text' : 'numeric'}
-                  autoComplete="one-time-code"
-                  autoFocus
-                  maxLength={useRecovery ? 20 : 7}
-                  required
-                  value={code}
-                  onChange={(event) => setCode(event.target.value)}
-                  placeholder={useRecovery ? 'xxxxx-xxxxx' : '123 456'}
-                  leading={useRecovery ? <KeyRound className="size-4" /> : <Smartphone className="size-4" />}
-                />
-
                 <Switch
                   checked={rememberDevice}
                   onChange={setRememberDevice}
                   label="Recordar este equipo por 30 días"
                   description="No vuelva a pedir el código en este navegador. Úselo solo en un equipo propio."
                 />
+
+                {useRecovery ? (
+                  <Input
+                    key="recuperacion"
+                    label="Código de recuperación"
+                    autoComplete="one-time-code"
+                    autoFocus
+                    maxLength={20}
+                    required
+                    value={code}
+                    onChange={(event) => setCode(event.target.value)}
+                    placeholder="xxxxx-xxxxx"
+                    leading={<KeyRound className="size-4" />}
+                  />
+                ) : (
+                  <CodeInput
+                    key="app"
+                    ref={codeInput}
+                    label="Código de la app"
+                    autoFocus
+                    value={code}
+                    onChange={setCode}
+                    onComplete={(value) => void submit(value)}
+                    disabled={submitting}
+                    invalid={Boolean(error)}
+                  />
+                )}
               </>
             ) : (
               <>

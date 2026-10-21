@@ -3,6 +3,7 @@ import QRCode from 'qrcode'
 import { toast } from 'sonner'
 import { Download, ShieldCheck, ShieldOff, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { CodeInput } from '@/components/ui/CodeInput'
 import { CopyButton } from '@/components/ui/Controls'
 import { Input } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
@@ -149,15 +150,17 @@ function SetupStep({
       .catch(() => setQr(undefined))
   }, [setup.authenticatorUri])
 
-  const confirm = async () => {
+  const confirm = async (value = code) => {
+    if (saving) return
     setError(undefined)
     setSaving(true)
     try {
-      const result = await api.post<RecoveryCodes>('/auth/2fa/enable', { code })
+      const result = await api.post<RecoveryCodes>('/auth/2fa/enable', { code: value })
       toast.success('Verificación en dos pasos activada')
       onEnabled(result.codes)
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'No se pudo activar.')
+      setCode('')
     } finally {
       setSaving(false)
     }
@@ -181,14 +184,13 @@ function SetupStep({
             <code className="min-w-0 flex-1 font-mono text-[0.8125rem] break-all text-ink">{setup.sharedKey}</code>
             <CopyButton value={setup.sharedKey.replace(/\s/g, '')} />
           </div>
-          <Input
+          <CodeInput
             label="Código de la app"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={7}
+            className="mt-1"
             value={code}
-            onChange={(event) => setCode(event.target.value)}
-            placeholder="123 456"
+            onChange={setCode}
+            onComplete={(value) => void confirm(value)}
+            disabled={saving}
             error={error}
           />
         </div>
@@ -198,7 +200,7 @@ function SetupStep({
         <Button variant="ghost" onClick={onCancel} disabled={saving}>
           Cancelar
         </Button>
-        <Button variant="primary" onClick={confirm} loading={saving} disabled={code.replace(/\D/g, '').length !== 6}>
+        <Button variant="primary" onClick={() => void confirm()} loading={saving} disabled={code.length !== 6}>
           Confirmar y activar
         </Button>
       </div>
@@ -227,12 +229,13 @@ function AskModal({
 
   if (!mode) return null
 
-  const submit = async () => {
+  const submit = async (input = value) => {
+    if (saving) return
     setError(undefined)
     setSaving(true)
     try {
       if (mode === 'regenerate') {
-        const result = await api.post<RecoveryCodes>('/auth/2fa/recovery-codes', { code: value })
+        const result = await api.post<RecoveryCodes>('/auth/2fa/recovery-codes', { code: input })
         onDone(result.codes)
       } else {
         await api.post('/auth/2fa/disable', { password: value })
@@ -241,6 +244,7 @@ function AskModal({
       }
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'No se pudo completar.')
+      if (mode === 'regenerate') setValue('')
     } finally {
       setSaving(false)
     }
@@ -260,7 +264,7 @@ function AskModal({
           <Button variant="ghost" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
-          <Button variant={regenerate ? 'primary' : 'danger'} onClick={submit} loading={saving} disabled={!value}>
+          <Button variant={regenerate ? 'primary' : 'danger'} onClick={() => void submit()} loading={saving} disabled={regenerate ? value.length !== 6 : !value}>
             {regenerate ? 'Generar' : 'Desactivar'}
           </Button>
         </>
@@ -272,15 +276,26 @@ function AskModal({
             ? 'Los códigos anteriores dejarán de servir. Escriba el código que muestra ahora la app.'
             : 'Su cuenta volverá a pedir solo la contraseña, y la cuenta de la app dejará de servir. Confirme con su contraseña.'}
         </p>
-        <Input
-          label={regenerate ? 'Código de la app' : 'Contraseña'}
-          type={regenerate ? 'text' : 'password'}
-          inputMode={regenerate ? 'numeric' : undefined}
-          autoComplete={regenerate ? 'one-time-code' : 'current-password'}
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          error={error}
-        />
+        {regenerate ? (
+          <CodeInput
+            label="Código de la app"
+            autoFocus
+            value={value}
+            onChange={setValue}
+            onComplete={(code) => void submit(code)}
+            disabled={saving}
+            error={error}
+          />
+        ) : (
+          <Input
+            label="Contraseña"
+            type="password"
+            autoComplete="current-password"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            error={error}
+          />
+        )}
       </div>
     </Modal>
   )
