@@ -110,17 +110,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
+/** Marca compacta de INTECHSYS ONE; el logo ya dice "one", al lado solo va qué es la consola. */
 function BrandMark() {
   return (
-    <div className="flex items-center gap-2.5 px-3 py-1">
-      <span className="relative flex size-8 items-center justify-center rounded-[0.625rem] shadow-[0_2px_8px_-2px_var(--brand-vivid)]" style={{ backgroundImage: 'var(--brand-gradient)' }}>
-        <span className="size-3 rounded-full border-2 border-[var(--accent-contrast)]" />
-      </span>
+    <div className="flex items-center gap-3 px-3 py-1">
+      <img src="/marca/marca.svg" alt="INTECHSYS ONE" width={29} height={40} className="marca-clara h-10 w-auto shrink-0" />
+      <img src="/marca/marca-oscuro.svg" alt="INTECHSYS ONE" width={29} height={40} className="marca-oscura h-10 w-auto shrink-0" />
 
-      <span className="flex flex-col leading-none">
-        <span className="text-[0.9375rem] font-semibold tracking-tight text-ink">One</span>
-        <span className="mt-0.5 text-[0.6875rem] text-ink-muted">Consola de configuración</span>
-      </span>
+      <span className="text-[0.8125rem] leading-tight font-semibold text-ink">Consola de configuración</span>
     </div>
   )
 }

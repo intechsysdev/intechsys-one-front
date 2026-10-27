@@ -58,7 +58,7 @@ createRoot(document.getElementById('root')!).render(
                   toast:
                     'rounded-xl border border-line bg-overlay text-ink shadow-[var(--shadow-float)]',
                   description: 'text-ink-muted',
-                  actionButton: 'bg-accent text-accent-contrast',
+                  actionButton: 'bg-accent-solid text-accent-contrast',
                 },
               }}
             />

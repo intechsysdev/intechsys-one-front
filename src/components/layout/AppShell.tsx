@@ -34,7 +34,7 @@ export function AppShell() {
     <div className="app-canvas min-h-dvh">
       <a
         href="#contenido"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-70 focus:rounded-lg focus:bg-accent focus:px-3 focus:py-2 focus:text-sm focus:text-accent-contrast"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-70 focus:rounded-lg focus:bg-accent-solid focus:px-3 focus:py-2 focus:text-sm focus:text-accent-contrast"
       >
         Saltar al contenido
       </a>

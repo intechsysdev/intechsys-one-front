@@ -7,12 +7,12 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline'
 type Size = 'sm' | 'md' | 'lg' | 'icon'
 
 const base =
-  'relative inline-flex items-center justify-center gap-2 rounded-lg font-medium whitespace-nowrap transition-[background-color,border-color,color,box-shadow,transform] duration-150 ' +
+  'relative inline-flex items-center justify-center gap-2 rounded-lg font-semibold whitespace-nowrap transition-[background-color,border-color,color,box-shadow,transform] duration-150 ' +
   'disabled:pointer-events-none disabled:opacity-45 active:translate-y-px select-none'
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-accent text-accent-contrast shadow-[0_1px_2px_rgba(0,0,0,0.12)] hover:bg-accent-hover',
+    'bg-accent-solid text-accent-contrast shadow-[0_1px_2px_rgba(0,0,0,0.12)] hover:bg-accent-hover',
   secondary:
     'bg-inset text-ink border border-line hover:border-line-strong hover:bg-overlay',
   outline:

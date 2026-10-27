@@ -110,7 +110,7 @@ export function LoginPage() {
             <BrandLockup />
           </div>
 
-          <h1 className="text-[1.5rem] leading-tight font-semibold tracking-[-0.02em] text-ink">
+          <h1 className="text-[1.5rem] leading-tight font-bold tracking-[-0.02em] text-ink">
             {challenge ? 'Verificación en dos pasos' : 'Iniciar sesión'}
           </h1>
           <p className="mt-1.5 text-[0.875rem] text-ink-muted">
@@ -247,16 +247,43 @@ export function LoginPage() {
   )
 }
 
+/** Marca sobre el formulario cuando no se ve el panel: logo horizontal, o la marca compacta si
+    la pantalla es angosta (menos de 480 px). La variante clara u oscura sigue al tema. */
 function BrandLockup() {
   return (
-    <div className="flex items-center gap-3">
-      <span className="flex size-10 items-center justify-center rounded-xl shadow-[0_4px_16px_-4px_var(--brand-vivid)]" style={{ backgroundImage: 'var(--brand-gradient)' }}>
-        <span className="size-3.5 rounded-full border-2 border-[var(--accent-contrast)]" />
+    <div>
+      <span className="block min-[480px]:hidden">
+        <img src="/marca/marca.svg" alt="INTECHSYS ONE" width={52} height={72} className="marca-clara h-18 w-auto" />
+        <img src="/marca/marca-oscuro.svg" alt="INTECHSYS ONE" width={52} height={72} className="marca-oscura h-18 w-auto" />
       </span>
-      <span className="flex flex-col leading-none">
-        <span className="text-lg font-semibold tracking-tight text-ink">One</span>
-        <span className="mt-1 text-[0.75rem] text-ink-muted">Consola de configuración</span>
+      <span className="hidden min-[480px]:block">
+        <img src="/marca/logo.svg" alt="INTECHSYS ONE" width={360} height={130} className="marca-clara h-auto w-90" />
+        <img src="/marca/logo-oscuro.svg" alt="INTECHSYS ONE" width={360} height={130} className="marca-oscura h-auto w-90" />
       </span>
+      <p className="mt-2 text-[0.75rem] text-ink-muted">Consola de configuración</p>
+    </div>
+  )
+}
+
+/** Marca del panel, siempre sobre oscuro: con el lema si el panel deja 640 px, si no sin él. */
+function BrandPanelLockup() {
+  return (
+    <div className="@container">
+      <img
+        src="/marca/logo-lema-oscuro.svg"
+        alt="INTECHSYS ONE"
+        width={640}
+        height={229}
+        className="hidden h-auto w-160 @min-[40rem]:block"
+      />
+      <img
+        src="/marca/logo-oscuro.svg"
+        alt="INTECHSYS ONE"
+        width={360}
+        height={130}
+        className="block h-auto w-90 @min-[40rem]:hidden"
+      />
+      <p className="mt-2 text-[0.75rem] text-ink-muted">Consola de configuración</p>
     </div>
   )
 }
@@ -269,7 +296,7 @@ function BrandPanel() {
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            'radial-gradient(ellipse 50rem 40rem at 15% 10%, rgb(229 30 74 / 0.28), transparent 60%), radial-gradient(ellipse 40rem 30rem at 90% 95%, rgb(248 178 29 / 0.16), transparent 55%)',
+            'radial-gradient(ellipse 50rem 40rem at 15% 10%, rgb(229 30 73 / 0.28), transparent 60%), radial-gradient(ellipse 40rem 30rem at 90% 95%, rgb(248 178 29 / 0.16), transparent 55%)',
         }}
         aria-hidden
       />
@@ -278,11 +305,11 @@ function BrandPanel() {
       <div className="grid-pattern pointer-events-none absolute inset-0 opacity-40" aria-hidden />
 
       <div className="relative">
-        <BrandLockup />
+        <BrandPanelLockup />
       </div>
 
       <div className="relative max-w-md">
-        <h2 className="text-[2rem] leading-[1.15] font-semibold tracking-[-0.03em] text-ink text-balance">
+        <h2 className="text-[2rem] leading-[1.15] font-bold tracking-[-0.03em] text-ink text-balance">
           El centro donde sus aplicaciones encuentran su configuración.
         </h2>
         <p className="mt-4 text-[0.9375rem] leading-relaxed text-ink-soft">
