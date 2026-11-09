@@ -257,6 +257,9 @@ export interface UserListItem {
   createdAt: string
   lastLoginAt?: string | null
   twoFactorEnabled?: boolean
+  /** Cuándo vence solo un bloqueo por intentos fallidos; null si lo bloqueó un administrador. */
+  lockedUntil?: string | null
+  lockedByAdmin?: boolean
 }
 
 export interface UserDetail {

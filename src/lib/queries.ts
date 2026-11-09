@@ -448,7 +448,9 @@ export function useDeleteSettingDefinition(appId: string) {
 
 // ── Usuarios ────────────────────────────────────────────────────────────────
 
-export function useUsers(params: ListParams & { tenantId?: string; isActive?: boolean; role?: string }) {
+export function useUsers(
+  params: ListParams & { tenantId?: string; isActive?: boolean; role?: string; isLockedOut?: boolean },
+) {
   return useQuery({
     queryKey: keys.users(params),
     queryFn: () => api.get<Paged<UserListItem>>('/users', { query: { ...params } }),

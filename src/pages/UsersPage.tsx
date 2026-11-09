@@ -30,7 +30,7 @@ import {
   useUsers,
 } from '@/lib/queries'
 import { ApiError } from '@/lib/api'
-import { formatDate, formatRelative } from '@/lib/utils'
+import { cn, formatDate, formatRelative } from '@/lib/utils'
 import { useDebounced } from '@/lib/useDebounced'
 import type { UserListItem } from '@/lib/types'
 
@@ -42,6 +42,8 @@ export function UsersPage() {
   const [editingId, setEditingId] = useState<string>()
   const [removing, setRemoving] = useState<UserListItem>()
   const [resetting, setResetting] = useState<UserListItem>()
+  const [onlyLocked, setOnlyLocked] = useState(false)
+  const [unlocking, setUnlocking] = useState<UserListItem>()
 
   const debouncedSearch = useDebounced(search, 300)
   const { data, isPending } = useUsers({
@@ -49,13 +51,20 @@ export function UsersPage() {
     pageSize: 20,
     search: debouncedSearch || undefined,
     role: role || undefined,
+    isLockedOut: onlyLocked || undefined,
   })
   const { data: roles } = useRoles()
+
+  // Solo interesa el total: cuántas cuentas hay bloqueadas ahora, sin importar la página o los filtros.
+  const { data: lockedSummary } = useUsers({ page: 1, pageSize: 1, isLockedOut: true })
+  const lockedCount = lockedSummary?.totalCount ?? 0
 
   const deleteUser = useDeleteUser()
   const toggleLock = useToggleUserLock()
 
-  useEffect(() => setPage(1), [debouncedSearch, role])
+  useEffect(() => setPage(1), [debouncedSearch, role, onlyLocked])
+
+  const filtered = Boolean(search || role)
 
   const confirmDelete = async () => {
     if (!removing) return
@@ -90,12 +99,30 @@ export function UsersPage() {
     }
   }
 
-  const changeLock = async (user: UserListItem) => {
+  const lockUser = async (user: UserListItem) => {
     try {
-      await toggleLock.mutateAsync({ id: user.id, locked: !user.isLockedOut })
-      toast.success(user.isLockedOut ? 'Usuario desbloqueado' : 'Usuario bloqueado')
+      await toggleLock.mutateAsync({ id: user.id, locked: true })
+      toast.success('Usuario bloqueado')
     } catch (error) {
-      toast.error('No se pudo cambiar el bloqueo', {
+      toast.error('No se pudo bloquear', {
+        description: error instanceof ApiError ? error.message : undefined,
+      })
+    }
+  }
+
+  const confirmUnlock = async () => {
+    if (!unlocking) return
+
+    try {
+      await toggleLock.mutateAsync({ id: unlocking.id, locked: false })
+      toast.success('Usuario desbloqueado', {
+        description: unlocking.isActive
+          ? 'Ya puede iniciar sesión con su contraseña actual.'
+          : 'La cuenta sigue inactiva: actívela en Editar usuario para que pueda entrar.',
+      })
+      setUnlocking(undefined)
+    } catch (error) {
+      toast.error('No se pudo desbloquear', {
         description: error instanceof ApiError ? error.message : undefined,
       })
     }
@@ -148,9 +175,18 @@ export function UsersPage() {
       header: 'Estado',
       render: (user) =>
         user.isLockedOut ? (
-          <Badge tone="critical" dot>
-            Bloqueado
-          </Badge>
+          <div className="flex flex-col items-start gap-1">
+            <Badge tone="critical" dot>
+              Bloqueado
+            </Badge>
+            <span className="text-[0.75rem] text-ink-muted">
+              {user.lockedByAdmin
+                ? 'Por un administrador'
+                : user.lockedUntil
+                  ? `Por intentos · se libera ${formatRelative(user.lockedUntil)}`
+                  : 'Por intentos fallidos'}
+            </span>
+          </div>
         ) : user.isActive ? (
           <Badge tone="positive" dot>
             Activo
@@ -176,82 +212,99 @@ export function UsersPage() {
       key: 'actions',
       header: '',
       align: 'right',
-      className: 'w-12',
+      className: 'w-px whitespace-nowrap',
       render: (user) => (
-        <DropdownMenu
-          trigger={({ toggle }) => (
+        <div className="flex items-center justify-end gap-1.5">
+          {user.isLockedOut && (
             <Button
-              size="icon"
-              variant="ghost"
-              aria-label={`Acciones de ${user.fullName}`}
+              size="sm"
+              variant="secondary"
+              icon={<Unlock className="size-3.5" />}
               onClick={(event) => {
                 event.stopPropagation()
-                toggle()
+                setUnlocking(user)
               }}
             >
-              <MoreHorizontal className="size-4" />
+              Desbloquear
             </Button>
           )}
-        >
-          {(close) => (
-            <>
-              <MenuItem
-                icon={<UserRound className="size-4" />}
-                onClick={() => {
-                  close()
-                  setEditingId(user.id)
+
+          <DropdownMenu
+            trigger={({ toggle }) => (
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label={`Acciones de ${user.fullName}`}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  toggle()
                 }}
               >
-                Editar usuario
-              </MenuItem>
-
-              <MenuItem
-                icon={<KeyRound className="size-4" />}
-                onClick={() => {
-                  close()
-                  setResetting(user)
-                }}
-              >
-                Restablecer contraseña
-              </MenuItem>
-
-              {user.twoFactorEnabled && (
+                <MoreHorizontal className="size-4" />
+              </Button>
+            )}
+          >
+            {(close) => (
+              <>
                 <MenuItem
-                  icon={<ShieldOff className="size-4" />}
+                  icon={<UserRound className="size-4" />}
                   onClick={() => {
                     close()
-                    setResettingTwoFactor(user)
+                    setEditingId(user.id)
                   }}
                 >
-                  Quitar verificación en dos pasos
+                  Editar usuario
                 </MenuItem>
-              )}
 
-              <MenuItem
-                icon={user.isLockedOut ? <Unlock className="size-4" /> : <Lock className="size-4" />}
-                onClick={() => {
-                  close()
-                  void changeLock(user)
-                }}
-              >
-                {user.isLockedOut ? 'Desbloquear' : 'Bloquear acceso'}
-              </MenuItem>
+                <MenuItem
+                  icon={<KeyRound className="size-4" />}
+                  onClick={() => {
+                    close()
+                    setResetting(user)
+                  }}
+                >
+                  Restablecer contraseña
+                </MenuItem>
 
-              <MenuSeparator />
+                {user.twoFactorEnabled && (
+                  <MenuItem
+                    icon={<ShieldOff className="size-4" />}
+                    onClick={() => {
+                      close()
+                      setResettingTwoFactor(user)
+                    }}
+                  >
+                    Quitar verificación en dos pasos
+                  </MenuItem>
+                )}
 
-              <MenuItem
-                tone="danger"
-                icon={<Trash2 className="size-4" />}
-                onClick={() => {
-                  close()
-                  setRemoving(user)
-                }}
-              >
-                Eliminar
-              </MenuItem>
-            </>
-          )}
-        </DropdownMenu>
+                <MenuItem
+                  icon={user.isLockedOut ? <Unlock className="size-4" /> : <Lock className="size-4" />}
+                  onClick={() => {
+                    close()
+                    if (user.isLockedOut) setUnlocking(user)
+                    else void lockUser(user)
+                  }}
+                >
+                  {user.isLockedOut ? 'Desbloquear' : 'Bloquear acceso'}
+                </MenuItem>
+
+                <MenuSeparator />
+
+                <MenuItem
+                  tone="danger"
+                  icon={<Trash2 className="size-4" />}
+                  onClick={() => {
+                    close()
+                    setRemoving(user)
+                  }}
+                >
+                  Eliminar
+                </MenuItem>
+              </>
+            )}
+          </DropdownMenu>
+        </div>
       ),
     },
   ]
@@ -294,6 +347,31 @@ export function UsersPage() {
               </option>
             ))}
           </Select>
+
+          {(lockedCount > 0 || onlyLocked) && (
+            <button
+              type="button"
+              aria-pressed={onlyLocked}
+              onClick={() => setOnlyLocked((value) => !value)}
+              className={cn(
+                'inline-flex h-9.5 items-center gap-2 rounded-lg border px-3 text-[0.8125rem] font-medium transition-colors',
+                onlyLocked
+                  ? 'border-critical/40 bg-critical-soft text-critical'
+                  : 'border-line bg-inset text-ink-soft hover:border-line-strong hover:text-ink',
+              )}
+            >
+              <Lock className="size-3.5" aria-hidden />
+              Bloqueados
+              <span
+                className={cn(
+                  'tabular rounded-md px-1.5 text-[0.75rem]',
+                  onlyLocked ? 'bg-critical/15' : 'bg-critical-soft text-critical',
+                )}
+              >
+                {lockedCount}
+              </span>
+            </button>
+          )}
         </div>
       </PageHeader>
 
@@ -303,15 +381,28 @@ export function UsersPage() {
         rowKey={(user) => user.id}
         loading={isPending}
         empty={
-          <EmptyState
-            icon={<UserRound className="size-5" />}
-            title={search || role ? 'Sin coincidencias' : 'No hay usuarios'}
-            description={
-              search || role
-                ? 'Pruebe con otro término o quite el filtro de rol.'
-                : 'Cree cuentas para que su equipo pueda administrar empresas y configuraciones.'
-            }
-          />
+          onlyLocked && !filtered ? (
+            <EmptyState
+              icon={<Unlock className="size-5" />}
+              title="No hay usuarios bloqueados"
+              description="Nadie tiene el acceso bloqueado en este momento."
+              action={
+                <Button size="sm" onClick={() => setOnlyLocked(false)}>
+                  Ver todos los usuarios
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={<UserRound className="size-5" />}
+              title={filtered || onlyLocked ? 'Sin coincidencias' : 'No hay usuarios'}
+              description={
+                filtered || onlyLocked
+                  ? 'Pruebe con otro término o quite los filtros.'
+                  : 'Cree cuentas para que su equipo pueda administrar empresas y configuraciones.'
+              }
+            />
+          )
         }
       />
 
@@ -341,6 +432,45 @@ export function UsersPage() {
             Se eliminará la cuenta de <strong className="text-ink">{removing?.fullName}</strong> y su
             pertenencia a todas las empresas. No se puede deshacer.
           </>
+        }
+      />
+
+      <ConfirmDialog
+        open={Boolean(unlocking)}
+        onClose={() => setUnlocking(undefined)}
+        onConfirm={confirmUnlock}
+        loading={toggleLock.isPending}
+        tone="primary"
+        title="Desbloquear usuario"
+        confirmLabel="Desbloquear"
+        description={
+          unlocking && (
+            <div className="flex flex-col gap-2.5">
+              {unlocking.lockedByAdmin ? (
+                <p>
+                  Un administrador bloqueó el acceso de{' '}
+                  <strong className="text-ink">{unlocking.fullName}</strong> y ese bloqueo no vence
+                  solo. Confirme que el motivo ya se resolvió; en Auditoría puede ver quién lo bloqueó
+                  y cuándo.
+                </p>
+              ) : (
+                <p>
+                  La cuenta de <strong className="text-ink">{unlocking.fullName}</strong> se bloqueó
+                  por demasiados intentos fallidos de contraseña o de código
+                  {unlocking.lockedUntil
+                    ? ` y se liberaría sola ${formatRelative(unlocking.lockedUntil)}`
+                    : ''}
+                  . Desbloquearla le permite entrar ya y pone en cero el contador de intentos.
+                </p>
+              )}
+
+              <p className="text-[0.8125rem] text-ink-muted">
+                {unlocking.isActive
+                  ? 'Desbloquear no cambia la contraseña. Si no la recuerda, restablézcala después.'
+                  : 'La cuenta además está inactiva: seguirá sin poder entrar hasta que la active en Editar usuario.'}
+              </p>
+            </div>
+          )
         }
       />
 
