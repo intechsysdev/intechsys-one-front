@@ -117,7 +117,11 @@ function BrandMark() {
       <img src="/marca/marca.svg" alt="INTECHSYS ONE" width={29} height={40} className="marca-clara h-10 w-auto shrink-0" />
       <img src="/marca/marca-oscuro.svg" alt="INTECHSYS ONE" width={29} height={40} className="marca-oscura h-10 w-auto shrink-0" />
 
-      <span className="text-[0.8125rem] leading-tight font-semibold text-ink">Consola de configuración</span>
+      {/* El lema tal como lo fija el manual de marca: primera línea Regular, segunda Semibold. */}
+      <p className="text-[0.8125rem] leading-tight text-ink">
+        <span className="block font-normal text-ink-soft">Conectamos tecnología.</span>
+        <span className="block font-semibold">Impulsamos negocios.</span>
+      </p>
     </div>
   )
 }
