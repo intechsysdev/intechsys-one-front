@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -39,7 +39,7 @@ import { fillGuide } from '@/lib/guide'
 import { ApiError } from '@/lib/api'
 import { formatNumber } from '@/lib/utils'
 import { useAuth } from '@/providers/AuthProvider'
-import type { SettingDataType, SettingDefinition } from '@/lib/types'
+import type { AppSummary, SettingDataType, SettingDefinition } from '@/lib/types'
 
 const dataTypes: { value: SettingDataType; label: string }[] = [
   { value: 'String', label: 'Texto' },
@@ -56,6 +56,7 @@ export function AppDetailPage() {
   const { user } = useAuth()
   const [tab, setTab] = useState<'esquema' | 'api' | 'general'>('esquema')
   const [deleting, setDeleting] = useState(false)
+  const [renaming, setRenaming] = useState(false)
 
   const { data, isPending, error } = useApp(appId)
   const deleteApp = useDeleteApp()
@@ -102,6 +103,17 @@ export function AppDetailPage() {
           <span className="flex flex-wrap items-center gap-3">
             <Avatar name={app.name} src={app.iconUrl} color={app.color} size="lg" square />
             <span>{app.name}</span>
+            {canManage && (
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label="Cambiar el nombre"
+                title="Cambiar el nombre"
+                onClick={() => setRenaming(true)}
+              >
+                <Pencil className="size-4" />
+              </Button>
+            )}
             {app.isActive ? (
               <Badge tone="positive" dot>
                 Activa
@@ -150,6 +162,8 @@ export function AppDetailPage() {
       {tab === 'general' && (
         <GeneralTab appId={appId} canManage={canManage} onDelete={() => setDeleting(true)} />
       )}
+
+      {canManage && <RenameAppModal app={app} open={renaming} onClose={() => setRenaming(false)} />}
 
       <ConfirmDialog
         open={deleting}
@@ -544,6 +558,93 @@ function DefinitionModal({
 }
 
 // ── Datos de la app ─────────────────────────────────────────────────────────
+
+/** Los datos actuales de la app como cuerpo del PUT, que reemplaza todos los campos a la vez. */
+function appUpdateBody(app: AppSummary) {
+  return {
+    name: app.name,
+    description: app.description ?? null,
+    category: app.category ?? null,
+    version: app.version ?? null,
+    color: app.color ?? null,
+    iconUrl: app.iconUrl ?? null,
+    homepageUrl: app.homepageUrl ?? null,
+    documentationUrl: app.documentationUrl ?? null,
+    supportEmail: app.supportEmail ?? null,
+    availableScopes: app.availableScopes ?? null,
+    launchUrl: app.launchUrl ?? null,
+    redirectUris: app.redirectUris ?? null,
+    isActive: app.isActive,
+    isPublic: app.isPublic,
+  }
+}
+
+/**
+ * Cambiar solo el nombre, sin pasar por todo el formulario de "Datos de la app". El slug no cambia:
+ * es lo que usan las integraciones, así que renombrar no rompe nada.
+ */
+function RenameAppModal({ app, open, onClose }: { app: AppSummary; open: boolean; onClose: () => void }) {
+  const updateApp = useUpdateApp(app.id)
+  const [name, setName] = useState(app.name)
+
+  useEffect(() => {
+    if (open) setName(app.name)
+  }, [open, app.name])
+
+  const trimmed = name.trim()
+  const canSave = trimmed.length > 0 && trimmed !== app.name
+
+  const save = async (event?: FormEvent) => {
+    event?.preventDefault()
+    if (!canSave) return
+
+    try {
+      await updateApp.mutateAsync({ ...appUpdateBody(app), name: trimmed })
+      toast.success('Nombre actualizado', { description: `La app ahora se llama «${trimmed}».` })
+      onClose()
+    } catch (error) {
+      toast.error('No se pudo cambiar el nombre', {
+        description: error instanceof ApiError ? error.message : undefined,
+      })
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      width="sm"
+      locked={updateApp.isPending}
+      title="Cambiar el nombre"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={updateApp.isPending}>
+            Cancelar
+          </Button>
+          <Button variant="primary" onClick={() => void save()} loading={updateApp.isPending} disabled={!canSave}>
+            Guardar
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={save} className="flex flex-col gap-3">
+        <Input
+          label="Nombre de la aplicación"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          maxLength={160}
+          required
+          autoFocus
+        />
+        <p className="text-[0.75rem] leading-relaxed text-ink-muted">
+          Se verá en el catálogo, en las empresas que la tienen y en «Mis aplicaciones». El identificador{' '}
+          <code className="rounded bg-inset px-1 py-0.5 font-mono text-[0.6875rem] text-ink-soft">{app.slug}</code>{' '}
+          no cambia: credenciales, variables e integraciones siguen funcionando igual.
+        </p>
+      </form>
+    </Modal>
+  )
+}
 
 function GeneralTab({
   appId,

@@ -68,7 +68,12 @@ export function formatNumber(value: number) {
 export function initials(name?: string | null) {
   if (!name) return '??'
 
-  const parts = name.trim().split(/\s+/).filter(Boolean)
+  // Solo letras y números: "Firma digital (prueba)" da "FP" y no "F(".
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part.replace(/[^\p{L}\p{N}]/gu, ''))
+    .filter(Boolean)
   if (parts.length === 0) return '??'
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
 
