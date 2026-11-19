@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
@@ -38,8 +38,15 @@ const highlights = [
   },
 ]
 
-/** A quién escribir si no se puede entrar. */
-const SUPPORT_EMAIL = (import.meta.env.VITE_SUPPORT_EMAIL ?? '').trim() || 'soporte@intechsyscol.com'
+/** A quién escribir si no se puede entrar, dónde abrir un caso y la política de privacidad. */
+const SUPPORT_EMAIL = (import.meta.env.VITE_SUPPORT_EMAIL ?? '').trim() || 'support@intechsyscol.com'
+const SUPPORT_URL =
+  (import.meta.env.VITE_SUPPORT_URL ?? '').trim() || 'https://team.support.intechsyscol.com/helpcenter/ISC/'
+const PRIVACY_URL =
+  (import.meta.env.VITE_PRIVACY_URL ?? '').trim() || 'https://www.intechsyscol.com/politicas-de-privacidad'
+
+/** "v1.0" para 1.0.0; el parche solo se muestra cuando no es cero ("v1.0.3"). */
+const VERSION = `v${__APP_VERSION__.replace(/^(\d+\.\d+)\.0$/, '$1')}`
 
 /** La franja de la marca: ámbar, carmesí y borgoña, de la paleta del manual. */
 const BRAND_STRIPE = 'linear-gradient(90deg, #F8B21D, #E51E49 45%, #751326)'
@@ -273,10 +280,14 @@ export function LoginPage() {
                       className="rounded-[10px] border border-line bg-inset px-3.5 py-3 text-[0.8125rem] leading-relaxed text-ink-soft"
                     >
                       La contraseña la restablece un administrador de la plataforma desde Usuarios y le
-                      entrega una temporal. Pídasela a quien le dio el acceso o escriba a{' '}
+                      entrega una temporal. Pídasela a quien le dio el acceso, escriba a{' '}
                       <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-accent hover:underline">
                         {SUPPORT_EMAIL}
-                      </a>
+                      </a>{' '}
+                      o abra un caso en el{' '}
+                      <ExternalLink href={SUPPORT_URL} className="font-medium text-accent hover:underline">
+                        portal de soporte
+                      </ExternalLink>
                       .
                     </p>
                   )}
@@ -341,12 +352,23 @@ export function LoginPage() {
 
           <p className="mt-6 text-center text-[0.875rem] text-ink-muted">
             ¿Problemas para ingresar?{' '}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold text-accent hover:underline">
+            <ExternalLink href={SUPPORT_URL} className="font-semibold text-accent hover:underline">
               Contacte a soporte
-            </a>
+            </ExternalLink>
           </p>
 
-          <p className="mt-4 text-center text-[0.8125rem] text-ink-muted lg:hidden">© {YEAR} Intechsys</p>
+          {/* Sin el panel, su pie baja aquí; la privacidad no puede quedar fuera de alcance en el celular. */}
+          <p className="mt-4 flex flex-wrap items-center justify-center gap-x-1.5 text-center text-[0.8125rem] text-ink-muted lg:hidden">
+            <span>© {YEAR} Intechsys · {VERSION}</span>
+            <span aria-hidden>·</span>
+            <ExternalLink href={SUPPORT_URL} className="hover:text-ink hover:underline">
+              Soporte
+            </ExternalLink>
+            <span aria-hidden>·</span>
+            <ExternalLink href={PRIVACY_URL} className="hover:text-ink hover:underline">
+              Privacidad
+            </ExternalLink>
+          </p>
         </motion.div>
       </div>
     </div>
@@ -440,11 +462,25 @@ function BrandPanel() {
       </div>
 
       <div className="relative flex flex-wrap items-center justify-between gap-3 text-[0.8125rem] text-ink-muted">
-        <span>© {YEAR} Intechsys</span>
-        <a href={`mailto:${SUPPORT_EMAIL}`} className="text-ink-soft hover:text-ink hover:underline">
-          Soporte
-        </a>
+        <span>© {YEAR} Intechsys · {VERSION}</span>
+        <span className="flex gap-5">
+          <ExternalLink href={SUPPORT_URL} className="text-ink-soft hover:text-ink hover:underline">
+            Soporte
+          </ExternalLink>
+          <ExternalLink href={PRIVACY_URL} className="text-ink-soft hover:text-ink hover:underline">
+            Privacidad
+          </ExternalLink>
+        </span>
       </div>
     </div>
+  )
+}
+
+/** Enlace a un sitio de Intechsys fuera del portal: en otra pestaña, para no perder el login. */
+function ExternalLink({ href, className, children }: { href: string; className?: string; children: ReactNode }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      {children}
+    </a>
   )
 }
