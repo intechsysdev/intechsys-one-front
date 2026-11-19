@@ -1,7 +1,19 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowLeft, ArrowRight, Blocks, Building2, KeyRound, Lock, Mail, ShieldCheck } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Blocks,
+  Building2,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Lock,
+  Mail,
+  ShieldCheck,
+  TriangleAlert,
+} from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { CodeInput } from '@/components/ui/CodeInput'
 import { Input, Switch } from '@/components/ui/Field'
@@ -11,26 +23,55 @@ import { useAuth } from '@/providers/AuthProvider'
 const highlights = [
   {
     icon: Building2,
-    title: 'Una empresa, un espacio aislado',
-    description: 'Cada cliente ve solo sus apps, sus variables y sus credenciales.',
+    title: 'Aislamiento por cliente',
+    description: 'Nadie ve lo que no es suyo.',
   },
   {
     icon: Blocks,
-    title: 'Apps con esquema propio',
-    description: 'Declare qué variables espera cada app y el portal genera el formulario.',
+    title: 'Formularios desde el esquema',
+    description: 'Defina las variables una vez y el portal hace el resto.',
   },
   {
     icon: KeyRound,
-    title: 'Credenciales que se rotan',
-    description: 'Api key y secreto por entorno, con revocación y traza de uso.',
+    title: 'Llaves con rotación',
+    description: 'Revocación y traza de uso en cada entorno.',
   },
 ]
+
+/** A quién escribir si no se puede entrar. */
+const SUPPORT_EMAIL = (import.meta.env.VITE_SUPPORT_EMAIL ?? '').trim() || 'soporte@intechsyscol.com'
+
+/** La franja de la marca: ámbar, carmesí y borgoña, de la paleta del manual. */
+const BRAND_STRIPE = 'linear-gradient(90deg, #F8B21D, #E51E49 45%, #751326)'
+
+const YEAR = new Date().getFullYear()
+
+/**
+ * El ambiente sale del dominio: la dirección del portal y sus alias son producción y no llevan
+ * aviso. Sin dominio configurado no se puede saber, y tampoco se avisa.
+ */
+function currentEnvironment(): string | null {
+  const host = window.location.hostname.toLowerCase()
+  if (host === 'localhost' || host === '127.0.0.1') return 'Ambiente local'
+
+  const main = (import.meta.env.VITE_PORTAL_URL ?? '').trim()
+  const production = [main ? new URL(main).hostname : '', ...(import.meta.env.VITE_PORTAL_ALIAS ?? '').split(',')]
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean)
+
+  if (production.length === 0) return null
+  return production.includes(host) ? null : 'Ambiente de pruebas'
+}
+
+const ENVIRONMENT = currentEnvironment()
 
 export function LoginPage() {
   const { status, login, completeTwoFactor } = useAuth()
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showForgotHelp, setShowForgotHelp] = useState(false)
   const [error, setError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
 
@@ -99,31 +140,46 @@ export function LoginPage() {
     <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
       <BrandPanel />
 
-      <div className="flex items-center justify-center bg-base px-5 py-12 sm:px-10">
+      <div className="relative flex items-start justify-center bg-base px-6 pt-10 pb-8 sm:items-center sm:px-10 sm:py-12">
+        {/* Sin el panel, la franja de la marca va arriba de la pantalla. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 lg:hidden" style={{ backgroundImage: BRAND_STRIPE }} aria-hidden />
+
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-sm"
+          className="w-full max-w-[25rem]"
         >
           <div className="mb-8 lg:hidden">
             <BrandLockup />
           </div>
 
-          <h1 className="text-[1.5rem] leading-tight font-bold tracking-[-0.02em] text-ink">
+          {ENVIRONMENT && (
+            <p
+              role="status"
+              className="mb-6 flex items-center gap-2.5 rounded-[10px] border border-caution/40 bg-caution-soft px-3.5 py-2.5 text-[0.875rem] text-ink"
+            >
+              <TriangleAlert className="size-4.5 shrink-0 text-caution" aria-hidden />
+              <span>
+                <strong className="font-bold">{ENVIRONMENT}</strong> · Los datos de este ambiente no son reales.
+              </span>
+            </p>
+          )}
+
+          <h1 className="text-[1.625rem] leading-tight font-bold tracking-[-0.02em] text-ink sm:text-[1.875rem]">
             {challenge ? 'Verificación en dos pasos' : 'Iniciar sesión'}
           </h1>
-          <p className="mt-1.5 text-[0.875rem] text-ink-muted">
+          <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-muted">
             {challenge
               ? useRecovery
                 ? 'Escriba uno de sus códigos de recuperación. Cada uno sirve una sola vez.'
                 : 'Abra la app de autenticación en su teléfono y escriba el código de seis dígitos.'
               : forApp
-                ? 'Inicie sesión con su cuenta de One para continuar a la aplicación.'
-                : 'Acceda con su cuenta corporativa para administrar empresas y accesos.'}
+                ? 'Bienvenido. Ingrese con su cuenta de One para continuar a la aplicación.'
+                : 'Bienvenido. Ingrese con su cuenta corporativa.'}
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4" noValidate>
+          <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-[1.125rem]" noValidate>
             {challenge ? (
               <>
                 <Switch
@@ -145,6 +201,7 @@ export function LoginPage() {
                     onChange={(event) => setCode(event.target.value)}
                     placeholder="xxxxx-xxxxx"
                     leading={<KeyRound className="size-4" />}
+                    className="h-12 text-[0.9375rem]"
                   />
                 ) : (
                   <CodeInput
@@ -170,19 +227,60 @@ export function LoginPage() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="nombre@empresa.com"
-                  leading={<Mail className="size-4" />}
+                  leading={<Mail className="size-4.5" />}
+                  className="h-12 text-[0.9375rem]"
                 />
 
-                <Input
-                  label="Contraseña"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="••••••••••"
-                  leading={<Lock className="size-4" />}
-                />
+                <div className="flex flex-col gap-2.5">
+                  <Input
+                    label="Contraseña"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Su contraseña"
+                    leading={<Lock className="size-4.5" />}
+                    className="h-12 pr-12 text-[0.9375rem]"
+                    action={
+                      <button
+                        type="button"
+                        className="text-[0.8125rem] font-medium text-accent hover:underline"
+                        aria-expanded={showForgotHelp}
+                        aria-controls="ayuda-contrasena"
+                        onClick={() => setShowForgotHelp((value) => !value)}
+                      >
+                        ¿Olvidó su contraseña?
+                      </button>
+                    }
+                    trailing={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((value) => !value)}
+                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        aria-pressed={showPassword}
+                        className="-mr-1 flex size-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-inset hover:text-ink"
+                      >
+                        {showPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+                      </button>
+                    }
+                  />
+
+                  {/* One no tiene recuperación por correo: la contraseña la restablece un administrador. */}
+                  {showForgotHelp && (
+                    <p
+                      id="ayuda-contrasena"
+                      className="rounded-[10px] border border-line bg-inset px-3.5 py-3 text-[0.8125rem] leading-relaxed text-ink-soft"
+                    >
+                      La contraseña la restablece un administrador de la plataforma desde Usuarios y le
+                      entrega una temporal. Pídasela a quien le dio el acceso o escriba a{' '}
+                      <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-accent hover:underline">
+                        {SUPPORT_EMAIL}
+                      </a>
+                      .
+                    </p>
+                  )}
+                </div>
               </>
             )}
 
@@ -191,7 +289,7 @@ export function LoginPage() {
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 role="alert"
-                className="rounded-lg border border-critical/40 bg-critical-soft px-3 py-2.5 text-[0.8125rem] text-critical"
+                className="rounded-[10px] border border-critical/40 bg-critical-soft px-3.5 py-2.5 text-[0.8125rem] text-critical"
               >
                 {error}
               </motion.p>
@@ -202,10 +300,10 @@ export function LoginPage() {
               variant="primary"
               size="lg"
               loading={submitting}
-              className="mt-1 w-full"
+              className="mt-1.5 h-13 w-full rounded-[10px]"
             >
               {challenge ? 'Verificar' : 'Entrar'}
-              {!submitting && <ArrowRight className="size-4" />}
+              {!submitting && <ArrowRight className="size-4.5" />}
             </Button>
 
             {challenge && (
@@ -236,14 +334,38 @@ export function LoginPage() {
             )}
           </form>
 
-          <p className="mt-7 flex items-start gap-2 text-[0.75rem] leading-relaxed text-ink-muted">
-            <ShieldCheck className="mt-px size-3.5 shrink-0 text-positive" aria-hidden />
-            Los accesos quedan registrados en la auditoría de la plataforma, incluidos los intentos
-            fallidos.
+          <p className="mt-6 flex items-start gap-2.5 rounded-[10px] bg-positive-soft px-3.5 py-3 text-[0.8125rem] leading-relaxed text-ink-soft">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-positive" aria-hidden />
+            Conexión cifrada. Cada acceso queda registrado en la auditoría de la plataforma.
           </p>
+
+          <p className="mt-6 text-center text-[0.875rem] text-ink-muted">
+            ¿Problemas para ingresar?{' '}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold text-accent hover:underline">
+              Contacte a soporte
+            </a>
+          </p>
+
+          <p className="mt-4 text-center text-[0.8125rem] text-ink-muted lg:hidden">© {YEAR} Intechsys</p>
         </motion.div>
       </div>
     </div>
+  )
+}
+
+/** "Portal de administración": dice dónde se está entrando, sobre el panel o sobre el formulario. */
+function PortalBadge({ onDark = false }: { onDark?: boolean }) {
+  return (
+    <span
+      className={
+        onDark
+          ? 'inline-flex items-center gap-2 self-start rounded-full border border-white/14 bg-white/8 px-3 py-1.5 text-[0.8125rem] font-medium tracking-[0.02em] text-ink-soft'
+          : 'inline-flex items-center gap-2 self-start rounded-full bg-accent-soft px-2.5 py-1 text-[0.75rem] font-medium text-accent'
+      }
+    >
+      <span className="size-1.5 rounded-full bg-accent" aria-hidden />
+      Portal de administración
+    </span>
   )
 }
 
@@ -251,7 +373,7 @@ export function LoginPage() {
     la pantalla es angosta (menos de 480 px). La variante clara u oscura sigue al tema. */
 function BrandLockup() {
   return (
-    <div>
+    <div className="flex flex-col gap-3.5">
       <span className="block min-[480px]:hidden">
         <img src="/marca/marca.svg" alt="INTECHSYS ONE" width={52} height={72} className="marca-clara h-18 w-auto" />
         <img src="/marca/marca-oscuro.svg" alt="INTECHSYS ONE" width={52} height={72} className="marca-oscura h-18 w-auto" />
@@ -260,30 +382,7 @@ function BrandLockup() {
         <img src="/marca/logo.svg" alt="INTECHSYS ONE" width={360} height={130} className="marca-clara h-auto w-90" />
         <img src="/marca/logo-oscuro.svg" alt="INTECHSYS ONE" width={360} height={130} className="marca-oscura h-auto w-90" />
       </span>
-      <p className="mt-2 text-[0.75rem] text-ink-muted">Consola de configuración</p>
-    </div>
-  )
-}
-
-/** Marca del panel, siempre sobre oscuro: con el lema si el panel deja 640 px, si no sin él. */
-function BrandPanelLockup() {
-  return (
-    <div className="@container">
-      <img
-        src="/marca/logo-lema-oscuro.svg"
-        alt="INTECHSYS ONE"
-        width={640}
-        height={229}
-        className="hidden h-auto w-160 @min-[40rem]:block"
-      />
-      <img
-        src="/marca/logo-oscuro.svg"
-        alt="INTECHSYS ONE"
-        width={360}
-        height={130}
-        className="block h-auto w-90 @min-[40rem]:hidden"
-      />
-      <p className="mt-2 text-[0.75rem] text-ink-muted">Consola de configuración</p>
+      <PortalBadge />
     </div>
   )
 }
@@ -291,58 +390,61 @@ function BrandPanelLockup() {
 function BrandPanel() {
   return (
     // Siempre en carbón: es la cara de la marca, con el carmesí y el ámbar como luz.
-    <div className="tema-oscuro relative hidden overflow-hidden bg-sunken text-ink lg:flex lg:flex-col lg:justify-between lg:p-12">
+    <div className="tema-oscuro relative hidden overflow-hidden bg-sunken text-ink lg:flex lg:flex-col lg:justify-between lg:gap-12 lg:px-16 lg:pt-14 lg:pb-10">
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            'radial-gradient(ellipse 50rem 40rem at 15% 10%, rgb(229 30 73 / 0.28), transparent 60%), radial-gradient(ellipse 40rem 30rem at 90% 95%, rgb(248 178 29 / 0.16), transparent 55%)',
+            'radial-gradient(ellipse 56rem 38rem at 0% 0%, rgb(229 30 73 / 0.3), transparent 70%), radial-gradient(ellipse 44rem 31rem at 100% 100%, rgb(248 178 29 / 0.14), transparent 70%)',
         }}
         aria-hidden
       />
-      {/* La franja de la guía de marca: profundo → vivo → profundo. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1.5" style={{ backgroundImage: 'var(--brand-band)' }} aria-hidden />
       <div className="grid-pattern pointer-events-none absolute inset-0 opacity-40" aria-hidden />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1" style={{ backgroundImage: BRAND_STRIPE }} aria-hidden />
 
       <div className="relative">
-        <BrandPanelLockup />
+        {/* Sin el lema: el mensaje del panel ya va abajo, y el lema pide 640 px de ancho. */}
+        <img src="/marca/logo-oscuro.svg" alt="INTECHSYS ONE" width={360} height={130} className="h-auto w-90" />
       </div>
 
-      <div className="relative max-w-md">
-        <h2 className="text-[2rem] leading-[1.15] font-bold tracking-[-0.03em] text-ink text-balance">
-          El centro donde sus aplicaciones encuentran su configuración.
-        </h2>
-        <p className="mt-4 text-[0.9375rem] leading-relaxed text-ink-soft">
-          Empresas, apps, llaves y variables en un solo lugar. Sus integraciones piden su
-          configuración y reciben exactamente lo que les corresponde.
-        </p>
+      <div className="relative flex max-w-[35rem] flex-col gap-9">
+        <div className="flex flex-col gap-4.5">
+          <PortalBadge onDark />
+          <h2 className="text-[clamp(2rem,3.6vw,2.875rem)] leading-[1.08] font-extrabold tracking-[-0.02em] text-balance text-ink">
+            Cada app recibe exactamente lo que le corresponde.
+          </h2>
+          <p className="text-[1.0625rem] leading-relaxed text-ink-soft">
+            Un solo punto de control para sus integraciones: seguro, por cliente y por entorno.
+          </p>
+        </div>
 
-        <ul className="mt-9 flex flex-col gap-5">
+        <ul className="flex flex-col gap-5.5">
           {highlights.map((item, index) => (
             <motion.li
               key={item.title}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.45, delay: 0.1 + index * 0.08, ease: [0.16, 1, 0.3, 1] }}
-              className="flex gap-3.5"
+              className="flex items-start gap-4"
             >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-line bg-raised text-accent">
-                <item.icon className="size-4.5" aria-hidden />
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-accent/28 bg-accent/12 text-accent">
+                <item.icon className="size-5" aria-hidden />
               </span>
-              <span>
-                <span className="block text-[0.875rem] font-medium text-ink">{item.title}</span>
-                <span className="mt-0.5 block text-[0.8125rem] leading-relaxed text-ink-muted">
-                  {item.description}
-                </span>
+              <span className="flex flex-col gap-1">
+                <span className="text-base font-semibold text-ink">{item.title}</span>
+                <span className="text-[0.9375rem] leading-normal text-ink-muted">{item.description}</span>
               </span>
             </motion.li>
           ))}
         </ul>
       </div>
 
-      <p className="relative font-mono text-[0.6875rem] text-ink-muted">
-        one-api · .NET 10 · SQL Server
-      </p>
+      <div className="relative flex flex-wrap items-center justify-between gap-3 text-[0.8125rem] text-ink-muted">
+        <span>© {YEAR} Intechsys</span>
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="text-ink-soft hover:text-ink hover:underline">
+          Soporte
+        </a>
+      </div>
     </div>
   )
 }

@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_PORTAL_URL?: string
   /** Hosts que redirigen a VITE_PORTAL_URL, separados por coma. */
   readonly VITE_PORTAL_ALIAS?: string
+  /** Correo de soporte que se ofrece en el login. Por defecto, soporte@intechsyscol.com. */
+  readonly VITE_SUPPORT_EMAIL?: string
 }
 
 interface ImportMeta {
